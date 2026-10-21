@@ -1,8 +1,6 @@
 import haxe.io.Bytes;
-import haxe.io.BytesInput;
 import haxe.io.Path;
-import haxe.zip.Entry;
-import haxe.zip.Reader;
+import haxe.zip.Uncompress;
 import sys.FileSystem;
 import sys.io.File;
 import sys.io.Process;
@@ -190,8 +188,8 @@ class Fetch {
 	static function unpackAndroid(vendor:String) {
 		var aar = null;
 		for (entry in readZip(download(ANDROID))) {
-			if (entry.fileName == 'SDL3-$VERSION.aar') {
-				aar = Reader.unzip(entry);
+			if (entry.name == 'SDL3-$VERSION.aar') {
+				aar = entry.data();
 			}
 		}
 		if (aar == null) {
@@ -200,7 +198,7 @@ class Fetch {
 		removeTree(vendor);
 		var headers = "prefab/modules/SDL3-Headers/include/";
 		var library = ~/^prefab\/modules\/SDL3-shared\/libs\/android\.([^\/]+)\/libSDL3\.so$/;
-		var count = extract(Reader.readZip(new BytesInput(aar)), vendor, name -> {
+		var count = extract(Zip.read(aar), vendor, name -> {
 			if (StringTools.startsWith(name, headers)) {
 				return "include/" + name.substr(headers.length);
 			}
@@ -213,27 +211,27 @@ class Fetch {
 	}
 
 	/** Writes the entries that `place` maps to a path under `dir`, and skips the ones it maps to null. **/
-	static function extract(entries:List<Entry>, dir:String, place:String->Null<String>):Int {
+	static function extract(entries:Array<ZipEntry>, dir:String, place:String->Null<String>):Int {
 		var count = 0;
 		for (entry in entries) {
-			if (StringTools.endsWith(entry.fileName, "/")) {
+			if (StringTools.endsWith(entry.name, "/")) {
 				continue;
 			}
-			var path = place(entry.fileName);
+			var path = place(entry.name);
 			if (path == null) {
 				continue;
 			}
 			var file = Path.join([dir, path]);
 			FileSystem.createDirectory(Path.directory(file));
-			File.saveBytes(file, Reader.unzip(entry));
+			File.saveBytes(file, entry.data());
 			count++;
 		}
 		return count;
 	}
 
-	static function readZip(file:String):List<Entry> {
+	static function readZip(file:String):Array<ZipEntry> {
 		Sys.println('  unpacking ${Path.withoutDirectory(file)}');
-		return Reader.readZip(new BytesInput(File.getBytes(file)));
+		return Zip.read(File.getBytes(file));
 	}
 
 	/** The cached copy of a release file, downloaded and checked first if it isn't there yet. **/
@@ -338,5 +336,53 @@ class Fetch {
 		Sys.println("Error: " + message);
 		Sys.exit(1);
 		return null;
+	}
+}
+
+typedef ZipEntry = {name:String, data:() -> Bytes};
+
+/**
+	Reads a zip through its central directory, which lists every entry's sizes. haxe.zip.Reader walks the entries
+	instead, and inflates the ones whose sizes come after their data in pure Haxe to find where they end, which is slow
+	in Haxe's interpreter. This inflates each entry once, with zlib.
+**/
+private class Zip {
+	public static function read(zip:Bytes):Array<ZipEntry> {
+		var end = zip.length - 22;
+		while (end >= 0 && zip.getInt32(end) != 0x06054b50) {
+			end--;
+		}
+		if (end < 0) {
+			throw "Not a zip file";
+		}
+		var count = zip.getUInt16(end + 10);
+		var pos = zip.getInt32(end + 16);
+		var entries = [];
+		for (_ in 0...count) {
+			if (zip.getInt32(pos) != 0x02014b50) {
+				throw "Damaged zip directory";
+			}
+			var method = zip.getUInt16(pos + 10);
+			var compressedSize = zip.getInt32(pos + 20);
+			var size = zip.getInt32(pos + 24);
+			var nameLength = zip.getUInt16(pos + 28);
+			var name = zip.getString(pos + 46, nameLength);
+			var header = zip.getInt32(pos + 42);
+			var start = header + 30 + zip.getUInt16(header + 26) + zip.getUInt16(header + 28);
+			entries.push({name: name, data: () -> method == 0 ? zip.sub(start, size) : inflate(zip.sub(start, compressedSize), size)});
+			pos += 46 + nameLength + zip.getUInt16(pos + 30) + zip.getUInt16(pos + 32);
+		}
+		return entries;
+	}
+
+	static function inflate(data:Bytes, size:Int):Bytes {
+		var out = Bytes.alloc(size);
+		var inflater = new Uncompress(-15);
+		var result = inflater.execute(data, 0, out, 0);
+		inflater.close();
+		if (!result.done || result.write != size) {
+			throw "Damaged zip entry";
+		}
+		return out;
 	}
 }
