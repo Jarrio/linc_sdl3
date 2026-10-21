@@ -259,6 +259,18 @@ extern class Native {
 	@:native("SDL_StopTextInput")
 	static function stopTextInput(window:NativeWindow):Bool;
 
+	@:native("linc::sdl3::startTextInputWith")
+	static function startTextInputWith(window:NativeWindow, type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Bool;
+
+	@:native("SDL_ScreenKeyboardShown")
+	static function screenKeyboardShown(window:NativeWindow):Bool;
+
+	@:native("linc::sdl3::androidInputTypeFor")
+	static function androidInputType(type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Int;
+
+	@:native("linc::sdl3::sendAndroidMessage")
+	static function sendAndroidMessage(command:Int, param:Int):Bool;
+
 	@:native("SDL_SetClipboardText")
 	static function setClipboardText(text:ConstCharStar):Bool;
 

@@ -180,6 +180,21 @@ class SDL {
 	public static inline var BLENDMODE_NONE = 0;
 	public static inline var BLENDMODE_BLEND = 1;
 
+	public static inline var TEXTINPUT_TYPE_TEXT = 0;
+	public static inline var TEXTINPUT_TYPE_TEXT_NAME = 1;
+	public static inline var TEXTINPUT_TYPE_TEXT_EMAIL = 2;
+	public static inline var TEXTINPUT_TYPE_TEXT_USERNAME = 3;
+	public static inline var TEXTINPUT_TYPE_TEXT_PASSWORD_HIDDEN = 4;
+	public static inline var TEXTINPUT_TYPE_TEXT_PASSWORD_VISIBLE = 5;
+	public static inline var TEXTINPUT_TYPE_NUMBER = 6;
+	public static inline var TEXTINPUT_TYPE_NUMBER_PASSWORD_HIDDEN = 7;
+	public static inline var TEXTINPUT_TYPE_NUMBER_PASSWORD_VISIBLE = 8;
+
+	public static inline var CAPITALIZE_NONE = 0;
+	public static inline var CAPITALIZE_SENTENCES = 1;
+	public static inline var CAPITALIZE_WORDS = 2;
+	public static inline var CAPITALIZE_LETTERS = 3;
+
 	public static inline var SCALEMODE_NEAREST = 0;
 	public static inline var SCALEMODE_LINEAR = 1;
 
@@ -434,6 +449,37 @@ class SDL {
 
 	public static function stopTextInput(window:Window):Bool {
 		return Native.stopTextInput(window.native);
+	}
+
+	/**
+		`startTextInput` for a particular kind of text, which picks the on-screen keyboard: `type` takes the
+		`TEXTINPUT_TYPE_` constants, `capitalization` the `CAPITALIZE_` ones (-1 for SDL's default for the type),
+		`autocorrect` turns suggestions and corrections on, and `multiline` lets Return start a new line. SDL gives
+		these to the keyboard when it shows it; one that's already up keeps the type it had (see `androidInputType`).
+	**/
+	public static function startTextInputWith(window:Window, type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Bool {
+		return Native.startTextInputWith(window.native, type, capitalization, autocorrect, multiline);
+	}
+
+	/** Whether the on-screen keyboard is showing for the window. **/
+	public static function screenKeyboardShown(window:Window):Bool {
+		return Native.screenKeyboardShown(window.native);
+	}
+
+	/**
+		The `android.text.InputType` that `startTextInputWith` gives Android's keyboard for these arguments; 0 off
+		Android. An app that wants an open keyboard to change type passes it to SDLActivity's `showTextInput`.
+	**/
+	public static function androidInputType(type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Int {
+		return Native.androidInputType(type, capitalization, autocorrect, multiline);
+	}
+
+	/**
+		Sends SDLActivity a command (0x8000 and up), which it hands to its `onUnhandledMessage` on the UI thread,
+		with `param` as an Integer. False off Android.
+	**/
+	public static function sendAndroidMessage(command:Int, param:Int):Bool {
+		return Native.sendAndroidMessage(command, param);
 	}
 
 	public static function setClipboardText(text:String):Bool {

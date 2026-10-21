@@ -83,6 +83,85 @@ namespace linc {
 			return SDL_RenderTexture(renderer, texture, NULL, NULL);
 		}
 
+		// SDL's capitalization when none is given: sentences for text, words for names, none for the rest.
+		inline int defaultCapitalization(int type) {
+			switch (type) {
+				case SDL_TEXTINPUT_TYPE_TEXT: return SDL_CAPITALIZE_SENTENCES;
+				case SDL_TEXTINPUT_TYPE_TEXT_NAME: return SDL_CAPITALIZE_WORDS;
+				default: return SDL_CAPITALIZE_NONE;
+			}
+		}
+
+		#ifdef __ANDROID__
+		// android.text.InputType for the properties, as SDL's Android_ShowScreenKeyboard works it out.
+		inline int androidInputType(int type, int capitalization, bool autocorrect, bool multiline) {
+			const int CLASS_TEXT = 0x1, CLASS_NUMBER = 0x2;
+			const int PERSON_NAME = 0x60, EMAIL = 0x20, PASSWORD = 0x80, VISIBLE_PASSWORD = 0x90, NUMBER_PASSWORD = 0x10;
+			int t;
+			switch (type) {
+				case SDL_TEXTINPUT_TYPE_TEXT_NAME: t = CLASS_TEXT | PERSON_NAME; break;
+				case SDL_TEXTINPUT_TYPE_TEXT_EMAIL: t = CLASS_TEXT | EMAIL; break;
+				case SDL_TEXTINPUT_TYPE_TEXT_PASSWORD_HIDDEN: t = CLASS_TEXT | PASSWORD; break;
+				case SDL_TEXTINPUT_TYPE_TEXT_PASSWORD_VISIBLE: t = CLASS_TEXT | VISIBLE_PASSWORD; break;
+				case SDL_TEXTINPUT_TYPE_NUMBER: t = CLASS_NUMBER; break;
+				case SDL_TEXTINPUT_TYPE_NUMBER_PASSWORD_HIDDEN: t = CLASS_NUMBER | NUMBER_PASSWORD; break;
+				case SDL_TEXTINPUT_TYPE_NUMBER_PASSWORD_VISIBLE: t = CLASS_NUMBER; break;
+				default: t = CLASS_TEXT; break;
+			}
+			switch (capitalization) {
+				case SDL_CAPITALIZE_LETTERS: t |= 0x1000; break;
+				case SDL_CAPITALIZE_WORDS: t |= 0x2000; break;
+				case SDL_CAPITALIZE_SENTENCES: t |= 0x4000; break;
+				default: break;
+			}
+			if (autocorrect) {
+				t |= 0x8000 | 0x10000;
+			}
+			if (multiline) {
+				t |= 0x20000;
+			}
+			return t;
+		}
+
+		#endif
+
+		// SDL_StartTextInputWithProperties with the properties as arguments; capitalization < 0 for SDL's default.
+		// On Android the type also goes as Android's own (androidInputType), the number an app gives SDL's
+		// SDLActivity.showTextInput to change an open keyboard, which SDL itself doesn't do.
+		inline bool startTextInputWith(SDL_Window *window, int type, int capitalization, bool autocorrect, bool multiline) {
+			if (capitalization < 0) {
+				capitalization = defaultCapitalization(type);
+			}
+			SDL_PropertiesID props = SDL_CreateProperties();
+			SDL_SetNumberProperty(props, SDL_PROP_TEXTINPUT_TYPE_NUMBER, type);
+			SDL_SetNumberProperty(props, SDL_PROP_TEXTINPUT_CAPITALIZATION_NUMBER, capitalization);
+			SDL_SetBooleanProperty(props, SDL_PROP_TEXTINPUT_AUTOCORRECT_BOOLEAN, autocorrect);
+			SDL_SetBooleanProperty(props, SDL_PROP_TEXTINPUT_MULTILINE_BOOLEAN, multiline);
+			#ifdef __ANDROID__
+			SDL_SetNumberProperty(props, SDL_PROP_TEXTINPUT_ANDROID_INPUTTYPE_NUMBER, androidInputType(type, capitalization, autocorrect, multiline));
+			#endif
+			bool ok = SDL_StartTextInputWithProperties(window, props);
+			SDL_DestroyProperties(props);
+			return ok;
+		}
+
+		// androidInputType with SDL's default capitalization for capitalization < 0; 0 off Android.
+		inline int androidInputTypeFor(int type, int capitalization, bool autocorrect, bool multiline) {
+			#ifdef __ANDROID__
+			return androidInputType(type, capitalization < 0 ? defaultCapitalization(type) : capitalization, autocorrect, multiline);
+			#else
+			return 0;
+			#endif
+		}
+
+		inline bool sendAndroidMessage(int command, int param) {
+			#ifdef __ANDROID__
+			return SDL_SendAndroidMessage((Uint32)command, param);
+			#else
+			return false;
+			#endif
+		}
+
 		constexpr bool sameString(const char *a, const char *b) {
 			return *a == *b && (*a == 0 || sameString(a + 1, b + 1));
 		}
@@ -118,6 +197,10 @@ static_assert(SDL_MOUSEWHEEL_NORMAL == 0, "SDL.WHEEL_NORMAL");
 static_assert(SDL_PIXELFORMAT_ARGB8888 == 0x16362004, "SDL.PIXELFORMAT_ARGB8888");
 static_assert(SDL_TEXTUREACCESS_STREAMING == 1, "SDL.TEXTUREACCESS_STREAMING");
 static_assert(SDL_BLENDMODE_NONE == 0 && SDL_BLENDMODE_BLEND == 1, "SDL.BLENDMODE_");
+static_assert(SDL_TEXTINPUT_TYPE_TEXT == 0 && SDL_TEXTINPUT_TYPE_TEXT_NAME == 1 && SDL_TEXTINPUT_TYPE_TEXT_EMAIL == 2 && SDL_TEXTINPUT_TYPE_TEXT_USERNAME == 3, "SDL.TEXTINPUT_TYPE_ 0-3");
+static_assert(SDL_TEXTINPUT_TYPE_TEXT_PASSWORD_HIDDEN == 4 && SDL_TEXTINPUT_TYPE_TEXT_PASSWORD_VISIBLE == 5 && SDL_TEXTINPUT_TYPE_NUMBER == 6, "SDL.TEXTINPUT_TYPE_ 4-6");
+static_assert(SDL_TEXTINPUT_TYPE_NUMBER_PASSWORD_HIDDEN == 7 && SDL_TEXTINPUT_TYPE_NUMBER_PASSWORD_VISIBLE == 8, "SDL.TEXTINPUT_TYPE_ 7-8");
+static_assert(SDL_CAPITALIZE_NONE == 0 && SDL_CAPITALIZE_SENTENCES == 1 && SDL_CAPITALIZE_WORDS == 2 && SDL_CAPITALIZE_LETTERS == 3, "SDL.CAPITALIZE_");
 static_assert(SDL_SCALEMODE_NEAREST == 0 && SDL_SCALEMODE_LINEAR == 1, "SDL.SCALEMODE_");
 static_assert(SDL_SYSTEM_CURSOR_DEFAULT == 0 && SDL_SYSTEM_CURSOR_TEXT == 1 && SDL_SYSTEM_CURSOR_WAIT == 2 && SDL_SYSTEM_CURSOR_CROSSHAIR == 3, "SDL.SYSTEM_CURSOR_ 0-3");
 static_assert(SDL_SYSTEM_CURSOR_PROGRESS == 4 && SDL_SYSTEM_CURSOR_NWSE_RESIZE == 5 && SDL_SYSTEM_CURSOR_NESW_RESIZE == 6 && SDL_SYSTEM_CURSOR_EW_RESIZE == 7, "SDL.SYSTEM_CURSOR_ 4-7");
