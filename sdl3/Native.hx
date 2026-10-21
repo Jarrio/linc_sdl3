@@ -214,6 +214,9 @@ extern class Native {
 	@:native("SDL_GetDisplayForWindow")
 	static function getDisplayForWindow(window:NativeWindow):UInt32;
 
+	@:native("linc::sdl3::isPointOnDisplay")
+	static function isPointOnDisplay(x:Int, y:Int):Bool;
+
 	@:native("linc::sdl3::getWindowSize")
 	static function getWindowSize(window:NativeWindow):Bool;
 

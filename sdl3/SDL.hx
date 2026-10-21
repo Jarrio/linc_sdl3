@@ -339,6 +339,11 @@ class SDL {
 		return cast Native.getDisplayForWindow(window.native);
 	}
 
+	/** Whether the point, in desktop coordinates, is on any connected display. **/
+	public static function isPointOnDisplay(x:Int, y:Int):Bool {
+		return Native.isPointOnDisplay(x, y);
+	}
+
 	/** The display's current mode, or null on failure. **/
 	public static function getCurrentDisplayMode(display:Int):Null<DisplayMode> {
 		if (!Native.getCurrentDisplayMode(display)) {

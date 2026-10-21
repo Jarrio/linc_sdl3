@@ -2,6 +2,7 @@
     <files id="haxe">
         <compilerflag value="-I${LINC_SDL3_PATH}linc/" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/linux-x64/include/" if="linux" />
+        <compilerflag value="-I${LINC_SDL3_PATH}vendor/windows/include/" if="windows" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/android/include/" if="android" />
         <file name="${LINC_SDL3_PATH}linc/linc_sdl3_android.cpp" if="android" />
     </files>
@@ -9,18 +10,31 @@
     <files id="__main__">
         <compilerflag value="-I${LINC_SDL3_PATH}linc/" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/linux-x64/include/" if="linux" />
+        <compilerflag value="-I${LINC_SDL3_PATH}vendor/windows/include/" if="windows" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/android/include/" if="android" />
     </files>
 
+    <!-- SDL's prebuilt SDL3.dll and import library for the CPU being built, from `haxe --run Fetch windows`. -->
+    <section if="windows">
+        <set name="LINC_SDL3_WINDOWS_LIB" value="${LINC_SDL3_PATH}vendor/windows/lib/arm64" if="HXCPP_ARM64" />
+        <set name="LINC_SDL3_WINDOWS_LIB" value="${LINC_SDL3_PATH}vendor/windows/lib/x64" unless="HXCPP_ARM64" />
+        <!-- hxcpp reads copyFile here at the top level, not inside a target, and copies after linking the exe. -->
+        <copyFile name="SDL3.dll" from="${LINC_SDL3_WINDOWS_LIB}" toolId="exe" />
+    </section>
+
     <target id="haxe">
-        <!-- Static SDL3 from build-sdl3.sh. X11, Wayland and GL are loaded at runtime, so only libm and pthread are linked. -->
+        <!-- Static SDL3 from `haxe --run Fetch linux-x64`. X11, Wayland and GL are loaded at runtime, so only libm and pthread are linked. -->
         <section if="linux">
             <lib name="${LINC_SDL3_PATH}vendor/linux-x64/lib/libSDL3.a" />
             <lib name="-lm" />
             <lib name="-lpthread" />
         </section>
 
-        <!-- SDL's prebuilt libSDL3.so from `build-sdl3.sh android`. The app packages it next to libmain.so. -->
+        <section if="windows">
+            <lib name="${LINC_SDL3_WINDOWS_LIB}/SDL3.lib" />
+        </section>
+
+        <!-- SDL's prebuilt libSDL3.so from `haxe --run Fetch android`. The app packages it next to libmain.so. -->
         <section if="android">
             <lib name="${LINC_SDL3_PATH}vendor/android/lib/arm64-v8a/libSDL3.so" if="HXCPP_ARM64" />
             <lib name="${LINC_SDL3_PATH}vendor/android/lib/armeabi-v7a/libSDL3.so" if="HXCPP_ARMV7" />

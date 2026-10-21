@@ -7,23 +7,19 @@ hxcpp bindings for the parts of SDL3 that simple, a UI layer on Skia, uses: wind
 ## Requirements
 
 - Haxe 5 and hxcpp with the extern marshalling types (`@:cpp.PointerType`, `@:cpp.ValueType`): HaxeFoundation/haxe#11981 and HaxeFoundation/hxcpp#1189, from December 2025 on. Tested with Haxe `5.0.0-preview.1+35cbcb5` / hxcpp `90b879e`, and Haxe `5.0.0-preview.1+066bd83` / hxcpp `504403d`.
-- SDL3 in `vendor/`: a static build for Linux x64, or SDL's prebuilt package for Android. `linc/linc_sdl3.xml` sets up those two so far.
+- SDL3 in `vendor/`: a static build for Linux x64, SDL's prebuilt DLL for Windows x64 and arm64, or SDL's prebuilt package for Android. `linc/linc_sdl3.xml` sets up those three so far. macOS isn't set up yet.
 
-## Building SDL3
+## Getting SDL3
 
-```sh
-./build-sdl3.sh
-```
+`haxe --run Fetch` in this folder puts SDL 3.4.18 in `vendor/` for this computer. Name targets to get others: `haxe --run Fetch windows android`. It checks each download's SHA-256, skips targets that already have this version (`--force` redoes them), and keeps the downloads in a per-user cache for other projects: `LINC_CACHE`, or `~/.cache/linc`, `~/Library/Caches/linc`, `%LOCALAPPDATA%\linc`. In a simple project, `haxelib run simple setup` runs it.
 
-Downloads the SDL 3.4.18 source, checks its SHA-256, applies the patches in `patches/`, and builds a static library into `vendor/linux-x64/`. It needs CMake, Ninja, a C compiler, and the X11 and Wayland development headers. Run it again after pulling a new patch.
+- `linux-x64`: SDL has no prebuilt Linux library, so this builds a static one into `vendor/linux-x64/`, from a fresh copy of the source with the patches in `patches/` applied. It needs CMake, `patch`, a C compiler, and the X11 or Wayland development headers (without them SDL builds with no way to open a window); Ninja is used when it's installed. The build stays in the cache, so other projects copy it instead of building again. A new or changed patch makes it build again.
+- `windows`: SDL's prebuilt `SDL3.dll` and its import library for x64 and arm64, in `vendor/windows/`. hxcpp copies `SDL3.dll` next to the exe, which needs it at runtime.
+- `android`: SDL's Android package, unpacked into `vendor/android/`: the headers, `libSDL3.so` for each CPU type, and `SDL3.jar` with SDL's Java classes. The app's APK needs both of the last two. On Android, SDL's Java code calls `SDL_main`, which `linc/linc_sdl3_android.cpp` forwards to hxcpp's `hxcpp_main`.
 
-- `patches/x11-slave-button-focus.patch`: on X11 with XInput2, a click on an unfocused window under a click-to-focus window manager reached SDL twice (the physical device's press, then the window manager's replay). Each patch file explains its change at the top.
+The patches, which only the Linux build applies; each patch file explains its change at the top:
 
-```sh
-./build-sdl3.sh android
-```
-
-Downloads SDL's Android package for 3.4.18, checks its SHA-256, and unpacks it into `vendor/android/`: the headers, `libSDL3.so` for each CPU type, and `SDL3.jar` with SDL's Java classes. The app's APK needs both of the last two. On Android, SDL's Java code calls `SDL_main`, which `linc/linc_sdl3_android.cpp` forwards to hxcpp's `hxcpp_main`.
+- `patches/x11-slave-button-focus.patch`: on X11 with XInput2, a click on an unfocused window under a click-to-focus window manager reached SDL twice (the physical device's press, then the window manager's replay).
 
 ## Usage
 

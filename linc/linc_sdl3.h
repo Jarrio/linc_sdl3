@@ -40,6 +40,14 @@ namespace linc {
 			return true;
 		}
 
+		// SDL_GetDisplayForPoint returns the closest display when the point is on none, so check its bounds too.
+		inline bool isPointOnDisplay(int x, int y) {
+			SDL_Point point = {x, y};
+			SDL_Rect bounds;
+			SDL_DisplayID display = SDL_GetDisplayForPoint(&point);
+			return display != 0 && SDL_GetDisplayBounds(display, &bounds) && SDL_PointInRect(&point, &bounds);
+		}
+
 		// Wakes a thread blocked in SDL_WaitEvent(Timeout); safe to call from any thread.
 		inline bool pushUserEvent(int code) {
 			SDL_Event event;
