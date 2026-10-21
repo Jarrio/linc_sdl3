@@ -245,6 +245,9 @@ extern class Native {
 	@:native("SDL_WaitEventTimeout")
 	static function waitEventTimeout(event:NativeEvent, timeoutMs:Int):Bool;
 
+	@:native("SDL_SetEventEnabled")
+	static function setEventEnabled(type:UInt32, enabled:Bool):Void;
+
 	@:native("linc::sdl3::pushUserEvent")
 	static function pushUserEvent(code:Int):Bool;
 
@@ -307,6 +310,11 @@ extern class Native {
 
 	@:native("SDL_RenderPresent")
 	static function renderPresent(renderer:NativeRenderer):Bool;
+
+	#if android
+	@:native("SDL_GetAndroidInternalStoragePath")
+	static function getAndroidInternalStoragePath():ConstCharStar;
+	#end
 
 	// Out-values of the linc::sdl3 helpers above
 

@@ -2,11 +2,14 @@
     <files id="haxe">
         <compilerflag value="-I${LINC_SDL3_PATH}linc/" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/linux-x64/include/" if="linux" />
+        <compilerflag value="-I${LINC_SDL3_PATH}vendor/android/include/" if="android" />
+        <file name="${LINC_SDL3_PATH}linc/linc_sdl3_android.cpp" if="android" />
     </files>
 
     <files id="__main__">
         <compilerflag value="-I${LINC_SDL3_PATH}linc/" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/linux-x64/include/" if="linux" />
+        <compilerflag value="-I${LINC_SDL3_PATH}vendor/android/include/" if="android" />
     </files>
 
     <target id="haxe">
@@ -15,6 +18,16 @@
             <lib name="${LINC_SDL3_PATH}vendor/linux-x64/lib/libSDL3.a" />
             <lib name="-lm" />
             <lib name="-lpthread" />
+        </section>
+
+        <!-- SDL's prebuilt libSDL3.so from `build-sdl3.sh android`. The app packages it next to libmain.so. -->
+        <section if="android">
+            <lib name="${LINC_SDL3_PATH}vendor/android/lib/arm64-v8a/libSDL3.so" if="HXCPP_ARM64" />
+            <lib name="${LINC_SDL3_PATH}vendor/android/lib/armeabi-v7a/libSDL3.so" if="HXCPP_ARMV7" />
+            <lib name="${LINC_SDL3_PATH}vendor/android/lib/x86_64/libSDL3.so" if="HXCPP_X86_64" />
+            <lib name="${LINC_SDL3_PATH}vendor/android/lib/x86/libSDL3.so" if="HXCPP_X86" />
+            <lib name="-llog" />
+            <lib name="-landroid" />
         </section>
     </target>
 </xml>

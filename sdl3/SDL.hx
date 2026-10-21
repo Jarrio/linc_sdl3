@@ -192,7 +192,15 @@ class SDL {
 	public static inline var KEY_ESCAPE = 0x1b;
 
 	public static function init(flags:Int):Bool {
-		return Native.init(flags);
+		if (!Native.init(flags)) {
+			return false;
+		}
+		#if android
+		// SDL 3.4's Android event wait pushes a poll sentinel on every pass, and pushing any event wakes the
+		// wait, so SDL_WaitEventTimeout spins a CPU core until it times out. Without sentinels it sleeps.
+		Native.setEventEnabled(EventType.PollSentinel, false);
+		#end
+		return true;
 	}
 
 	public static function quit():Void {
@@ -455,6 +463,14 @@ class SDL {
 	public static function destroyCursor(cursor:Cursor):Void {
 		Native.destroyCursor(cursor.native);
 	}
+
+	#if android
+	/** The app's private files folder (Android's Context.getFilesDir()), or null on failure. **/
+	public static function getAndroidInternalStoragePath():Null<String> {
+		var path = Native.getAndroidInternalStoragePath();
+		return path == null ? null : path.toString();
+	}
+	#end
 
 	// 2D renderer
 
