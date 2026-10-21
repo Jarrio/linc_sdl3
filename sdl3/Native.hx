@@ -299,6 +299,12 @@ extern class Native {
 	@:native("SDL_DestroyTexture")
 	static function destroyTexture(texture:NativeTexture):Void;
 
+	@:native("SDL_SetTextureBlendMode")
+	static function setTextureBlendMode(texture:NativeTexture, mode:UInt32):Bool;
+
+	@:native("linc::sdl3::setTextureScaleMode")
+	static function setTextureScaleMode(texture:NativeTexture, mode:Int):Bool;
+
 	@:native("linc::sdl3::updateTexture")
 	static function updateTexture(texture:NativeTexture, pixels:BytesData, pitch:Int):Bool;
 

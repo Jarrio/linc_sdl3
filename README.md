@@ -15,7 +15,9 @@ hxcpp bindings for the parts of SDL3 that simple, a UI layer on Skia, uses: wind
 ./build-sdl3.sh
 ```
 
-Downloads the SDL 3.4.18 source, checks its SHA-256, and builds a static library into `vendor/linux-x64/`. It needs CMake, Ninja, a C compiler, and the X11 and Wayland development headers.
+Downloads the SDL 3.4.18 source, checks its SHA-256, applies the patches in `patches/`, and builds a static library into `vendor/linux-x64/`. It needs CMake, Ninja, a C compiler, and the X11 and Wayland development headers. Run it again after pulling a new patch.
+
+- `patches/x11-slave-button-focus.patch`: on X11 with XInput2, a click on an unfocused window under a click-to-focus window manager reached SDL twice (the physical device's press, then the window manager's replay). Each patch file explains its change at the top.
 
 ```sh
 ./build-sdl3.sh android

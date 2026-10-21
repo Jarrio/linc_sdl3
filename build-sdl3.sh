@@ -28,9 +28,14 @@ case "$TARGET" in
   linux-x64)
     PREFIX="$HERE/vendor/linux-x64"
     download "SDL3-$VERSION.tar.gz" "$SOURCE_SHA256"
-    if [ ! -d "$WORK/SDL3-$VERSION" ]; then
-      tar xzf "$WORK/download/SDL3-$VERSION.tar.gz" -C "$WORK"
-    fi
+    # A fresh copy each time, so the patches in patches/ apply to the release source exactly once.
+    rm -rf "$WORK/SDL3-$VERSION"
+    tar xzf "$WORK/download/SDL3-$VERSION.tar.gz" -C "$WORK"
+    for p in "$HERE"/patches/*.patch; do
+      [ -e "$p" ] || continue
+      echo "Applying $(basename "$p")"
+      patch -p1 -d "$WORK/SDL3-$VERSION" < "$p"
+    done
     cmake -S "$WORK/SDL3-$VERSION" -B "$WORK/build-linux-x64" -G Ninja \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX="$PREFIX" \

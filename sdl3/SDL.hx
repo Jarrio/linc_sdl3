@@ -168,6 +168,7 @@ class SDL {
 	public static inline var HINT_MOUSE_DOUBLE_CLICK_RADIUS = "SDL_MOUSE_DOUBLE_CLICK_RADIUS";
 	public static inline var HINT_FRAMEBUFFER_ACCELERATION = "SDL_FRAMEBUFFER_ACCELERATION";
 	public static inline var HINT_KEYCODE_OPTIONS = "SDL_KEYCODE_OPTIONS";
+	public static inline var HINT_MOUSE_FOCUS_CLICKTHROUGH = "SDL_MOUSE_FOCUS_CLICKTHROUGH";
 
 	public static inline var TOUCH_MOUSE_ID = -1;
 	public static inline var PEN_MOUSE_ID = -2;
@@ -175,6 +176,12 @@ class SDL {
 
 	public static inline var PIXELFORMAT_ARGB8888 = 0x16362004;
 	public static inline var TEXTUREACCESS_STREAMING = 1;
+
+	public static inline var BLENDMODE_NONE = 0;
+	public static inline var BLENDMODE_BLEND = 1;
+
+	public static inline var SCALEMODE_NEAREST = 0;
+	public static inline var SCALEMODE_LINEAR = 1;
 
 	public static inline var SYSTEM_CURSOR_DEFAULT = 0;
 	public static inline var SYSTEM_CURSOR_TEXT = 1;
@@ -513,6 +520,19 @@ class SDL {
 
 	public static function destroyTexture(texture:Texture):Void {
 		Native.destroyTexture(texture.native);
+	}
+
+	/**
+		How the texture is drawn over what's under it: `BLENDMODE_NONE` or `BLENDMODE_BLEND`. A texture with an
+		alpha channel starts as `BLENDMODE_BLEND` in SDL3 (SDL2 started with none).
+	**/
+	public static function setTextureBlendMode(texture:Texture, mode:Int):Bool {
+		return Native.setTextureBlendMode(texture.native, mode);
+	}
+
+	/** How the texture is sampled when drawn at another size: `SCALEMODE_NEAREST` or `SCALEMODE_LINEAR` (the default). **/
+	public static function setTextureScaleMode(texture:Texture, mode:Int):Bool {
+		return Native.setTextureScaleMode(texture.native, mode);
 	}
 
 	/** Replaces the whole texture with `pixels`, `pitch` bytes per row. **/

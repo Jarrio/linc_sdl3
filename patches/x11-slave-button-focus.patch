@@ -1,0 +1,26 @@
+X11: ignore a slave pointer's button events until the window also has keyboard focus.
+
+With XInput2, SDL selects button events from every device. Under a click-to-focus window manager
+(metacity, Mutter, Muffin), the window manager's passive grab takes the master pointer's press, but
+the physical (slave) device's press still reaches SDL before the window has focus. The window
+manager then focuses the window and replays the press through the master pointer. SDL's check for
+slave events looks at mouse focus, which the pointer already gives the window, so both presses get
+through: with SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH set, a single click on an unfocused window arrives
+as two clicks, the second counted as a double click. Without the hint, the replayed press is
+dropped as the focusing click and the early slave press gets through instead, so the hint's
+default doesn't hold under XInput2.
+
+Checking keyboard focus too drops the early slave press. The replayed master press follows the
+hint, as it does without XInput2.
+
+--- a/src/video/x11/SDL_x11xinput2.c
++++ b/src/video/x11/SDL_x11xinput2.c
+@@ -684,7 +684,7 @@
+                 /* Ignore slave button events on non-focused windows, as they can arrive before FocusIn events,
+                  * or result in focus being incorrectly set while a grab is active.
+                  */
+-                if (SDL_GetMouseFocus() != windowdata->window) {
++                if (SDL_GetMouseFocus() != windowdata->window || SDL_GetKeyboardFocus() != windowdata->window) {
+                     break;
+                 }
+ 

@@ -71,6 +71,10 @@ namespace linc {
 			return SDL_CreateTexture(renderer, (SDL_PixelFormat)format, (SDL_TextureAccess)access, width, height);
 		}
 
+		inline bool setTextureScaleMode(SDL_Texture *texture, int mode) {
+			return SDL_SetTextureScaleMode(texture, (SDL_ScaleMode)mode);
+		}
+
 		inline bool updateTexture(SDL_Texture *texture, ::Array<unsigned char> pixels, int pitch) {
 			return SDL_UpdateTexture(texture, NULL, pixels->getBase(), pitch);
 		}
@@ -113,9 +117,12 @@ static_assert((Sint32)SDL_TOUCH_MOUSEID == -1 && (Sint32)SDL_PEN_MOUSEID == -2, 
 static_assert(SDL_MOUSEWHEEL_NORMAL == 0, "SDL.WHEEL_NORMAL");
 static_assert(SDL_PIXELFORMAT_ARGB8888 == 0x16362004, "SDL.PIXELFORMAT_ARGB8888");
 static_assert(SDL_TEXTUREACCESS_STREAMING == 1, "SDL.TEXTUREACCESS_STREAMING");
+static_assert(SDL_BLENDMODE_NONE == 0 && SDL_BLENDMODE_BLEND == 1, "SDL.BLENDMODE_");
+static_assert(SDL_SCALEMODE_NEAREST == 0 && SDL_SCALEMODE_LINEAR == 1, "SDL.SCALEMODE_");
 static_assert(SDL_SYSTEM_CURSOR_DEFAULT == 0 && SDL_SYSTEM_CURSOR_TEXT == 1 && SDL_SYSTEM_CURSOR_WAIT == 2 && SDL_SYSTEM_CURSOR_CROSSHAIR == 3, "SDL.SYSTEM_CURSOR_ 0-3");
 static_assert(SDL_SYSTEM_CURSOR_PROGRESS == 4 && SDL_SYSTEM_CURSOR_NWSE_RESIZE == 5 && SDL_SYSTEM_CURSOR_NESW_RESIZE == 6 && SDL_SYSTEM_CURSOR_EW_RESIZE == 7, "SDL.SYSTEM_CURSOR_ 4-7");
 static_assert(SDL_SYSTEM_CURSOR_NS_RESIZE == 8 && SDL_SYSTEM_CURSOR_MOVE == 9 && SDL_SYSTEM_CURSOR_NOT_ALLOWED == 10 && SDL_SYSTEM_CURSOR_POINTER == 11, "SDL.SYSTEM_CURSOR_ 8-11");
 static_assert(linc::sdl3::sameString(SDL_HINT_MOUSE_DOUBLE_CLICK_RADIUS, "SDL_MOUSE_DOUBLE_CLICK_RADIUS"), "SDL.HINT_MOUSE_DOUBLE_CLICK_RADIUS");
 static_assert(linc::sdl3::sameString(SDL_HINT_FRAMEBUFFER_ACCELERATION, "SDL_FRAMEBUFFER_ACCELERATION"), "SDL.HINT_FRAMEBUFFER_ACCELERATION");
 static_assert(linc::sdl3::sameString(SDL_HINT_KEYCODE_OPTIONS, "SDL_KEYCODE_OPTIONS"), "SDL.HINT_KEYCODE_OPTIONS");
+static_assert(linc::sdl3::sameString(SDL_HINT_MOUSE_FOCUS_CLICKTHROUGH, "SDL_MOUSE_FOCUS_CLICKTHROUGH"), "SDL.HINT_MOUSE_FOCUS_CLICKTHROUGH");
