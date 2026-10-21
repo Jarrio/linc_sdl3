@@ -1,4 +1,8 @@
 <xml>
+    <!-- Each class bound with linc.Linc.xml('sdl3') includes this file. Read it once, or every include adds
+         the libraries to the link again, and the command outgrows the OS's length limit. -->
+    <pragma once="true" />
+
     <files id="haxe">
         <compilerflag value="-I${LINC_SDL3_PATH}linc/" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/linux-x64/include/" if="linux" />
