@@ -173,6 +173,9 @@ extern class Native {
 	@:native("SDL_GetCurrentVideoDriver")
 	static function getCurrentVideoDriver():ConstCharStar;
 
+	@:native("SDL_GetSystemTheme")
+	static function getSystemTheme():Int;
+
 	@:native("SDL_GetTicks")
 	static function getTicks():UInt64;
 

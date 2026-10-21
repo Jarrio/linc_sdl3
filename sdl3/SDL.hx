@@ -60,6 +60,8 @@ class DisplayMode {
 
 enum abstract EventType(Int) from Int to Int {
 	var Quit = 0x100;
+	/** The system switched between light and dark; `getSystemTheme` says which. **/
+	var SystemThemeChanged = 0x108;
 	var WindowShown = 0x202;
 	var WindowExposed = 0x204;
 	var WindowResized = 0x206;
@@ -213,6 +215,10 @@ class SDL {
 
 	public static inline var KEY_ESCAPE = 0x1b;
 
+	public static inline var SYSTEM_THEME_UNKNOWN = 0;
+	public static inline var SYSTEM_THEME_LIGHT = 1;
+	public static inline var SYSTEM_THEME_DARK = 2;
+
 	public static function init(flags:Int):Bool {
 		if (!Native.init(flags)) {
 			return false;
@@ -237,6 +243,15 @@ class SDL {
 	public static function getVersion():String {
 		var v = Native.getVersion();
 		return '${Std.int(v / 1000000)}.${Std.int(v / 1000) % 1000}.${v % 1000}';
+	}
+
+	/**
+		Whether the system is set to light or dark: one of the `SYSTEM_THEME_` constants, `SYSTEM_THEME_UNKNOWN` where
+		the platform doesn't say (a Linux desktop whose portal has no preference). `SystemThemeChanged` comes when it
+		changes. Needs the video subsystem.
+	**/
+	public static function getSystemTheme():Int {
+		return Native.getSystemTheme();
 	}
 
 	public static function getCurrentVideoDriver():String {

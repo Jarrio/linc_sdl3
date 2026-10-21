@@ -1,6 +1,6 @@
 # linc_sdl3
 
-hxcpp bindings for the parts of SDL3 that simple, a UI layer on Skia, uses: windows, OpenGL contexts, events, text input, the clipboard, cursors, display modes and the 2D renderer.
+hxcpp bindings for the parts of SDL3 that simple, a UI layer on Skia, uses: windows, OpenGL contexts, events, text input, the clipboard, cursors, display modes, the system's light or dark theme and the 2D renderer.
 
 `sdl3.SDL` wraps the externs in `sdl3.Native` with ordinary static functions, so cppia scripts can call them through a `-D scriptable` host.
 
