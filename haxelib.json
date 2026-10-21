@@ -1,0 +1,20 @@
+{
+	"name": "linc_sdl3",
+	"url": "https://github.com/Jarrio/linc_sdl3",
+	"license": "MIT",
+	"tags": [
+		"sdl",
+		"sdl3",
+		"linc",
+		"native",
+		"cpp"
+	],
+	"description": "Haxe bindings for SDL3; works with cppia, requires Haxe 5",
+	"version": "0.1.0",
+	"classPath": "",
+	"releasenote": "Window, GL, events, text input, clipboard, cursors and the 2D renderer",
+	"contributors": [
+		"Jarrio"
+	],
+	"dependencies": {}
+}

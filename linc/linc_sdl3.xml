@@ -1,0 +1,20 @@
+<xml>
+    <files id="haxe">
+        <compilerflag value="-I${LINC_SDL3_PATH}linc/" />
+        <compilerflag value="-I${LINC_SDL3_PATH}vendor/linux-x64/include/" if="linux" />
+    </files>
+
+    <files id="__main__">
+        <compilerflag value="-I${LINC_SDL3_PATH}linc/" />
+        <compilerflag value="-I${LINC_SDL3_PATH}vendor/linux-x64/include/" if="linux" />
+    </files>
+
+    <target id="haxe">
+        <!-- Static SDL3 from build-sdl3.sh. X11, Wayland and GL are loaded at runtime, so only libm and pthread are linked. -->
+        <section if="linux">
+            <lib name="${LINC_SDL3_PATH}vendor/linux-x64/lib/libSDL3.a" />
+            <lib name="-lm" />
+            <lib name="-lpthread" />
+        </section>
+    </target>
+</xml>
