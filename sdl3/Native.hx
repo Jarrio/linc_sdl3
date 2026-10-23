@@ -176,6 +176,9 @@ extern class Native {
 	@:native("SDL_GetSystemTheme")
 	static function getSystemTheme():Int;
 
+	@:native("SDL_HasEvent")
+	static function hasEvent(type:Int):Bool;
+
 	@:native("SDL_GetTicks")
 	static function getTicks():UInt64;
 

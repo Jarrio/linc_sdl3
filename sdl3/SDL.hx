@@ -83,6 +83,11 @@ enum abstract EventType(Int) from Int to Int {
 	var MouseButtonUp = 0x402;
 	var MouseWheel = 0x403;
 	var FingerDown = 0x700;
+	/**
+		The system took a touch over (Android's edge back gesture, palm rejection). SDL ends the mouse press it made
+		from the touch with an ordinary button release, queued just before this.
+	**/
+	var FingerCanceled = 0x703;
 	/** Ends each batch of events SDL pumps. It isn't input. **/
 	var PollSentinel = 0x7f00;
 	/** Sent by `SDL.pushUserEvent`. **/
@@ -407,6 +412,11 @@ class SDL {
 		}
 		fillEvent(event, e);
 		return true;
+	}
+
+	/** Whether an event of `type` is waiting in the queue, without taking it out or pumping new ones. **/
+	public static function hasEvent(type:EventType):Bool {
+		return Native.hasEvent(type);
 	}
 
 	/** Queues a `User` event carrying `code`, which wakes `waitEventTimeout`. Safe from any thread. **/
