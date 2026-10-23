@@ -189,6 +189,11 @@ class SDL {
 	public static inline var HINT_FRAMEBUFFER_ACCELERATION = "SDL_FRAMEBUFFER_ACCELERATION";
 	public static inline var HINT_KEYCODE_OPTIONS = "SDL_KEYCODE_OPTIONS";
 	public static inline var HINT_MOUSE_FOCUS_CLICKTHROUGH = "SDL_MOUSE_FOCUS_CLICKTHROUGH";
+	/**
+		The input method UI the app draws itself, set before `init`: "composition" when it draws the text being composed
+		from `TextEditing` events (IBus and Fcitx then send it rather than showing it in their own window).
+	**/
+	public static inline var HINT_IME_IMPLEMENTED_UI = "SDL_IME_IMPLEMENTED_UI";
 
 	public static inline var TOUCH_MOUSE_ID = -1;
 	public static inline var PEN_MOUSE_ID = -2;
@@ -520,6 +525,11 @@ class SDL {
 	/** Whether the on-screen keyboard is showing for the window. **/
 	public static function screenKeyboardShown(window:Window):Bool {
 		return Native.screenKeyboardShown(window.native);
+	}
+
+	/** Drops the input method's composition (the `TextEditing` text) without committing it. **/
+	public static function clearComposition(window:Window):Bool {
+		return Native.clearComposition(window.native);
 	}
 
 	/**

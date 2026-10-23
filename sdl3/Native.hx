@@ -288,6 +288,9 @@ extern class Native {
 	@:native("SDL_ScreenKeyboardShown")
 	static function screenKeyboardShown(window:NativeWindow):Bool;
 
+	@:native("SDL_ClearComposition")
+	static function clearComposition(window:NativeWindow):Bool;
+
 	@:native("linc::sdl3::androidInputTypeFor")
 	static function androidInputType(type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Int;
 
