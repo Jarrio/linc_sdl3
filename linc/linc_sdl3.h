@@ -136,6 +136,12 @@ namespace linc {
 		// SDL_StartTextInputWithProperties with the properties as arguments; capitalization < 0 for SDL's default.
 		// On Android the type also goes as Android's own (androidInputType), the number an app gives SDL's
 		// SDLActivity.showTextInput to change an open keyboard, which SDL itself doesn't do.
+		// The area of the window, in window units, where text is being entered, and the caret's offset in it.
+		inline bool setTextInputArea(SDL_Window *window, int x, int y, int w, int h, int cursor) {
+			SDL_Rect rect = {x, y, w, h};
+			return SDL_SetTextInputArea(window, &rect, cursor);
+		}
+
 		inline bool startTextInputWith(SDL_Window *window, int type, int capitalization, bool autocorrect, bool multiline) {
 			if (capitalization < 0) {
 				capitalization = defaultCapitalization(type);
@@ -196,6 +202,8 @@ static_assert(SDL_EVENT_WINDOW_CLOSE_REQUESTED == 0x210, "EventType.WindowCloseR
 static_assert(SDL_EVENT_WINDOW_DISPLAY_CHANGED == 0x213, "EventType.WindowDisplayChanged");
 static_assert(SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED == 0x214 && SDL_EVENT_WINDOW_SAFE_AREA_CHANGED == 0x215, "EventType window scale");
 static_assert(SDL_EVENT_KEY_DOWN == 0x300 && SDL_EVENT_KEY_UP == 0x301 && SDL_EVENT_TEXT_INPUT == 0x303, "EventType keyboard");
+static_assert(SDL_EVENT_TEXT_EDITING == 0x302, "EventType.TextEditing");
+static_assert(SDL_EVENT_SCREEN_KEYBOARD_SHOWN == 0x308 && SDL_EVENT_SCREEN_KEYBOARD_HIDDEN == 0x309, "EventType screen keyboard");
 static_assert(SDL_EVENT_MOUSE_MOTION == 0x400 && SDL_EVENT_MOUSE_BUTTON_DOWN == 0x401 && SDL_EVENT_MOUSE_BUTTON_UP == 0x402 && SDL_EVENT_MOUSE_WHEEL == 0x403, "EventType mouse");
 static_assert(SDL_EVENT_FINGER_DOWN == 0x700, "EventType.FingerDown");
 static_assert(SDL_EVENT_POLL_SENTINEL == 0x7f00 && SDL_EVENT_USER == 0x8000, "EventType sentinel and user");

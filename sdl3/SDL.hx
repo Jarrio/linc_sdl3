@@ -77,7 +77,12 @@ enum abstract EventType(Int) from Int to Int {
 	var WindowSafeAreaChanged = 0x215;
 	var KeyDown = 0x300;
 	var KeyUp = 0x301;
+	/** An input method's text being composed, not yet committed: `text`, with `editStart` and `editLength`. **/
+	var TextEditing = 0x302;
 	var TextInput = 0x303;
+	/** The on-screen keyboard came up or went away. SDL sends these on Android, iOS, X11 and OpenVR. **/
+	var ScreenKeyboardShown = 0x308;
+	var ScreenKeyboardHidden = 0x309;
 	var MouseMotion = 0x400;
 	var MouseButtonDown = 0x401;
 	var MouseButtonUp = 0x402;
@@ -109,8 +114,16 @@ class Event {
 	public var down:Bool = false;
 	public var repeat:Bool = false;
 
-	/** `TextInput`: the UTF-8 text typed. **/
+	/** `TextInput`: the UTF-8 text typed. `TextEditing`: the text being composed, empty when the composition ends. **/
 	public var text:String = null;
+
+	/**
+		`TextEditing`: the input method's cursor in `text` (in characters, -1 if it gave none) and the length of the
+		part it marked, if any (-1 if none).
+	**/
+	public var editStart:Int = -1;
+
+	public var editLength:Int = -1;
 
 	/** Mouse events: the mouse that sent it. `TOUCH_MOUSE_ID` marks events SDL made from touches. **/
 	public var which:Int = 0;
@@ -437,6 +450,11 @@ class SDL {
 			case TextInput:
 				event.windowID = cast e.text.windowID;
 				event.text = e.text.text.toString();
+			case TextEditing:
+				event.windowID = cast e.edit.windowID;
+				event.text = e.edit.text.toString();
+				event.editStart = e.edit.start;
+				event.editLength = e.edit.length;
 			case MouseMotion:
 				event.windowID = cast e.motion.windowID;
 				event.which = cast e.motion.which;
@@ -489,6 +507,14 @@ class SDL {
 	**/
 	public static function startTextInputWith(window:Window, type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Bool {
 		return Native.startTextInputWith(window.native, type, capitalization, autocorrect, multiline);
+	}
+
+	/**
+		Where text is being entered, in window units, with the caret `cursor` window units from the area's left: input
+		methods put their candidate window by it. On Android SDL moves its hidden text view there.
+	**/
+	public static function setTextInputArea(window:Window, x:Int, y:Int, w:Int, h:Int, cursor:Int):Bool {
+		return Native.setTextInputArea(window.native, x, y, w, h, cursor);
 	}
 
 	/** Whether the on-screen keyboard is showing for the window. **/

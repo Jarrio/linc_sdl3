@@ -66,6 +66,16 @@ extern class NativeTextInputEvent {
 
 @:semantics(value)
 @:include("linc_sdl3.h")
+@:cpp.ValueType({type: "SDL_TextEditingEvent"})
+extern class NativeTextEditingEvent {
+	var windowID:UInt32;
+	var text:ConstCharStar;
+	var start:Int;
+	var length:Int;
+}
+
+@:semantics(value)
+@:include("linc_sdl3.h")
 @:cpp.ValueType({type: "SDL_MouseMotionEvent"})
 extern class NativeMouseMotionEvent {
 	var windowID:UInt32;
@@ -125,6 +135,7 @@ extern class NativeEvent {
 	var type:UInt32;
 	var key:NativeKeyboardEvent;
 	var text:NativeTextInputEvent;
+	var edit:NativeTextEditingEvent;
 	var motion:NativeMouseMotionEvent;
 	var button:NativeMouseButtonEvent;
 	var wheel:NativeMouseWheelEvent;
@@ -270,6 +281,9 @@ extern class Native {
 
 	@:native("linc::sdl3::startTextInputWith")
 	static function startTextInputWith(window:NativeWindow, type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Bool;
+
+	@:native("linc::sdl3::setTextInputArea")
+	static function setTextInputArea(window:NativeWindow, x:Int, y:Int, w:Int, h:Int, cursor:Int):Bool;
 
 	@:native("SDL_ScreenKeyboardShown")
 	static function screenKeyboardShown(window:NativeWindow):Bool;
