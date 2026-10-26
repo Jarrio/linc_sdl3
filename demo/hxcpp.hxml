@@ -1,0 +1,5 @@
+common.hxml
+
+-cp hxcpp
+-main Main
+--cpp bin/cpp

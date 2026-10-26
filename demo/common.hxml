@@ -1,0 +1,7 @@
+-cp ..
+--class-path project
+
+--debug
+-D HXCPP_CPP17
+-D analyzer-optimize
+-D no-deprecation-warnings

@@ -1,0 +1,6 @@
+common.hxml
+
+-cp script
+-main Client
+--cppia bin/cppia/script.cppia
+-D dll-import=export_classes.info

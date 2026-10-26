@@ -1,0 +1,10 @@
+common.hxml
+
+-cp cppia
+-main Main
+-D scriptable
+--cpp bin/cppia
+
+--dce no
+-D dll-export=export_classes.info
+--macro include("sdl3", true)
