@@ -1,5 +1,6 @@
 -cp ..
 --class-path project
+-lib bindman
 
 --debug
 -D HXCPP_CPP17

@@ -1,7 +1,7 @@
 package sdl3;
 
 import haxe.io.BytesData;
-import sdl3.Native;
+import interop.Sdl;
 
 typedef Size = {w:Int, h:Int};
 typedef Area = {x:Int, y:Int, w:Int, h:Int};
@@ -14,7 +14,7 @@ typedef Area = {x:Int, y:Int, w:Int, h:Int};
 	converts it from Dynamic through a box that needs the full struct.
 **/
 class Window {
-	@:allow(sdl3.SDL) var native:NativeWindow;
+	@:allow(sdl3.SDL) var native:SDL_Window;
 
 	@:allow(sdl3.SDL) public var id(default, null):Int;
 
@@ -22,26 +22,26 @@ class Window {
 }
 
 class GLContext {
-	@:allow(sdl3.SDL) var native:NativeGLContext;
+	@:allow(sdl3.SDL) var native:SDL_GLContext;
 
 	function new() {}
 }
 
 /** A 2D renderer, which simple uses when it can't get a GL context. **/
 class Renderer {
-	@:allow(sdl3.SDL) var native:NativeRenderer;
+	@:allow(sdl3.SDL) var native:SDL_Renderer;
 
 	function new() {}
 }
 
 class Texture {
-	@:allow(sdl3.SDL) var native:NativeTexture;
+	@:allow(sdl3.SDL) var native:SDL_Texture;
 
 	function new() {}
 }
 
 class Cursor {
-	@:allow(sdl3.SDL) var native:NativeCursor;
+	@:allow(sdl3.SDL) var native:SDL_Cursor;
 
 	function new() {}
 }
@@ -243,28 +243,28 @@ class SDL {
 	public static inline var SYSTEM_THEME_DARK = 2;
 
 	public static function init(flags:Int):Bool {
-		if (!Native.init(flags)) {
+		if (!SDL_Native.SDL_Init(flags)) {
 			return false;
 		}
 		#if android
 		// SDL 3.4's Android event wait pushes a poll sentinel on every pass, and pushing any event wakes the
 		// wait, so SDL_WaitEventTimeout spins a CPU core until it times out. Without sentinels it sleeps.
-		Native.setEventEnabled(EventType.PollSentinel, false);
+		SDL_Native.setEventEnabled(EventType.PollSentinel, false);
 		#end
 		return true;
 	}
 
 	public static function quit():Void {
-		Native.quit();
+		SDL_Native.SDL_Quit();
 	}
 
 	public static function getError():String {
-		return Native.getError().toString();
+		return cast(SDL_Native.SDL_GetError(), String);
 	}
 
 	/** The linked SDL version, e.g. "3.4.18". **/
 	public static function getVersion():String {
-		var v = Native.getVersion();
+		var v = SDL_Native.SDL_GetVersion();
 		return '${Std.int(v / 1000000)}.${Std.int(v / 1000) % 1000}.${v % 1000}';
 	}
 
@@ -274,67 +274,69 @@ class SDL {
 		changes. Needs the video subsystem.
 	**/
 	public static function getSystemTheme():Int {
-		return Native.getSystemTheme();
+		return cast SDL_Native.SDL_GetSystemTheme();
 	}
 
 	public static function getCurrentVideoDriver():String {
-		var driver = Native.getCurrentVideoDriver();
-		return driver == null ? null : driver.toString();
+		var driver = cast SDL_Native.SDL_GetCurrentVideoDriver();
+		return driver == null ? null : driver;
 	}
 
 	/** Milliseconds since `init`, as a Float so it crosses into cppia without a 64-bit type. **/
 	public static function getTicks():Float {
-		var ticks:Float = cast Native.getTicks();
+		var ticks:Float = cast SDL_Native.SDL_GetTicks();
 		return ticks;
 	}
 
 	/** `name` takes the `HINT_` constants. **/
 	public static function setHint(name:String, value:String):Bool {
-		return Native.setHint(name, value);
+		return SDL_Native.SDL_SetHint(name, value);
 	}
 
 	// Windows
 
 	/** `flags` takes the `WINDOW_` constants. Returns null on failure; see `getError`. **/
 	public static function createWindow(title:String, width:Int, height:Int, flags:Int):Null<Window> {
-		var native = Native.createWindow(title, width, height, flags);
+		var native = SDL_Native.SDL_CreateWindow(title, width, height, flags);
 		if (native == null) {
 			return null;
 		}
 		var window = @:privateAccess new Window();
 		window.native = native;
-		window.id = Native.getWindowID(native);
+		window.id = SDL_Native.SDL_GetWindowID(native);
 		return window;
 	}
 
 	public static function destroyWindow(window:Window):Void {
-		Native.destroyWindow(window.native);
+		SDL_Native.SDL_DestroyWindow(window.native);
 	}
 
 	public static function showWindow(window:Window):Bool {
-		return Native.showWindow(window.native);
+		return SDL_Native.SDL_ShowWindow(window.native);
 	}
 
 	/** In window units. **/
 	public static function setWindowSize(window:Window, width:Int, height:Int):Bool {
-		return Native.setWindowSize(window.native, width, height);
+		return SDL_Native.SDL_SetWindowSize(window.native, width, height);
 	}
 
 	/** In window units, from the top-left of the desktop. **/
 	public static function setWindowPosition(window:Window, x:Int, y:Int):Bool {
-		return Native.setWindowPosition(window.native, x, y);
+		return SDL_Native.SDL_SetWindowPosition(window.native, x, y);
 	}
 
 	/** Size in window units: points on macOS and iOS, pixels elsewhere. **/
 	public static function getWindowSize(window:Window):Size {
-		Native.getWindowSize(window.native);
-		return {w: Native.outW, h: Native.outH};
+		var w = 0, h = 0;
+		SDL_Native.SDL_GetWindowSize(window.native, w, h);
+		return {w: w, h: h};
 	}
 
 	/** Size of the drawable area in pixels. **/
 	public static function getWindowSizeInPixels(window:Window):Size {
-		Native.getWindowSizeInPixels(window.native);
-		return {w: Native.outW, h: Native.outH};
+		var w = 0, h = 0;
+		SDL_Native.SDL_GetWindowSizeInPixels(window.native, w, h);
+		return {w: w, h: h};
 	}
 
 	/**
@@ -342,54 +344,62 @@ class SDL {
 		user's 125% or 150%) times the pixel density. 2 on a Retina Mac, 1.5 for 150% on Windows.
 	**/
 	public static function getWindowDisplayScale(window:Window):Float {
-		return Native.getWindowDisplayScale(window.native);
+		return SDL_Native.SDL_GetWindowDisplayScale(window.native);
 	}
 
 	/** Pixels per window unit: 2 on a Retina Mac, 1 where window units are pixels. **/
 	public static function getWindowPixelDensity(window:Window):Float {
-		return Native.getWindowPixelDensity(window.native);
+		return SDL_Native.SDL_GetWindowPixelDensity(window.native);
 	}
 
 	/** The part of the window not covered by notches, rounded corners or system bars, in window units. **/
 	public static function getWindowSafeArea(window:Window):Area {
-		var rect = new NativeRect();
-		Native.getWindowSafeArea(window.native, rect);
+		var rect = new SDL_Rect();
+		SDL_Native.SDL_GetWindowSafeArea(window.native, rect);
 		return {x: rect.x, y: rect.y, w: rect.w, h: rect.h};
 	}
 
 	/** The display the window is mostly on, or 0 on failure. **/
 	public static function getDisplayForWindow(window:Window):Int {
-		return cast Native.getDisplayForWindow(window.native);
+		return cast SDL_Native.SDL_GetDisplayForWindow(window.native);
 	}
 
 	/** Whether the point, in desktop coordinates, is on any connected display. **/
 	public static function isPointOnDisplay(x:Int, y:Int):Bool {
-		return Native.isPointOnDisplay(x, y);
+		var point = new SDL_Point();
+		point.x = x;
+		point.y = y;
+		var bounds = new SDL_Rect();
+		var display = SDL_Native.SDL_GetDisplayForPoint(point);
+		return display != 0 && SDL_Native.SDL_GetDisplayBounds(display, bounds);
 	}
 
 	/** The display's current mode, or null on failure. **/
 	public static function getCurrentDisplayMode(display:Int):Null<DisplayMode> {
-		if (!Native.getCurrentDisplayMode(display)) {
+		var mode = new SDL_DisplayMode();
+		mode = SDL_Native.SDL_GetCurrentDisplayMode(display);
+		if(mode == null) {
 			return null;
 		}
-		var mode = new DisplayMode();
-		mode.w = Native.outW;
-		mode.h = Native.outH;
-		mode.refreshRate = Native.outRefreshRate;
-		mode.pixelDensity = Native.outPixelDensity;
-		return mode;
+
+		var display = new DisplayMode();
+		display.h = mode.h;
+		display.w = mode.w;
+		display.refreshRate = mode.refresh_rate;
+		display.pixelDensity = mode.pixel_density;
+		return display;
 	}
 
 	// OpenGL
 
 	/** `attr` takes the `GL_` constants. Call before creating the window. **/
 	public static function glSetAttribute(attr:Int, value:Int):Bool {
-		return Native.glSetAttribute(cast attr, value);
+		return SDL_Native.SDL_GL_SetAttribute(cast attr, value);
 	}
 
 	/** Creates the context and makes it current. Returns null on failure; see `getError`. **/
 	public static function glCreateContext(window:Window):Null<GLContext> {
-		var native = Native.glCreateContext(window.native);
+		var native = SDL_Native.SDL_GL_CreateContext(window.native);
 		if (native == null) {
 			return null;
 		}
@@ -399,23 +409,23 @@ class SDL {
 	}
 
 	public static function glDestroyContext(context:GLContext):Bool {
-		return Native.glDestroyContext(context.native);
+		return SDL_Native.SDL_GL_DestroyContext(context.native);
 	}
 
 	public static function glSetSwapInterval(interval:Int):Bool {
-		return Native.glSetSwapInterval(interval);
+		return SDL_Native.SDL_GL_SetSwapInterval(interval);
 	}
 
 	public static function glSwapWindow(window:Window):Bool {
-		return Native.glSwapWindow(window.native);
+		return SDL_Native.SDL_GL_SwapWindow(window.native);
 	}
 
 	// Events
 
 	/** Fills `event` with the next pending event. Returns false when there are none. **/
 	public static function pollEvent(event:Event):Bool {
-		var e = new NativeEvent();
-		if (!Native.pollEvent(e)) {
+		var e = new SDL_Event();
+		if (!SDL_Native.SDL_PollEvent(e)) {
 			return false;
 		}
 		fillEvent(event, e);
@@ -424,8 +434,8 @@ class SDL {
 
 	/** Waits up to `timeoutMs` for an event and fills `event` with it. Returns false on timeout. **/
 	public static function waitEventTimeout(event:Event, timeoutMs:Int):Bool {
-		var e = new NativeEvent();
-		if (!Native.waitEventTimeout(e, timeoutMs)) {
+		var e = new SDL_Event();
+		if (!SDL_Native.SDL_WaitEventTimeout(e, timeoutMs)) {
 			return false;
 		}
 		fillEvent(event, e);
@@ -434,30 +444,38 @@ class SDL {
 
 	/** Whether an event of `type` is waiting in the queue, without taking it out or pumping new ones. **/
 	public static function hasEvent(type:EventType):Bool {
-		return Native.hasEvent(type);
+		return SDL_Native.SDL_HasEvent(type);
 	}
 
 	/** Queues a `User` event carrying `code`, which wakes `waitEventTimeout`. Safe from any thread. **/
 	public static function pushUserEvent(code:Int):Bool {
-		return Native.pushUserEvent(code);
+		trace("This might not work.");
+		var event = new SDL_Event();
+		// SDL_zero is a define hence, no binding.
+		// This might not work.
+		// var e = cast cpp.RawPointer.addressOf(event);
+		// SDL_Native.SDL_memset(cast(e, cpp.UInt32), 0, cpp.Stdlib.sizeof(SDL_Event));
+		event.type = cast SDL_EVENT_USER;
+		event.user.code = code;
+		return SDL_Native.SDL_PushEvent(event);
 	}
 
-	// Inlined into the two functions above, so no generated wrapper has to pass a NativeEvent around.
-	extern inline static function fillEvent(event:Event, e:NativeEvent):Void {
+	// Inlined into the two functions above, so no generated wrapper has to pass a SDL_NativeEvent around.
+	extern inline static function fillEvent(event:Event, e:SDL_Event):Void {
 		event.type = cast e.type;
 		switch (event.type) {
 			case KeyDown | KeyUp:
 				event.windowID = cast e.key.windowID;
 				event.key = cast e.key.key;
-				event.scancode = e.key.scancode;
+				event.scancode = cast e.key.scancode;
 				event.down = e.key.down;
 				event.repeat = e.key.repeat;
 			case TextInput:
 				event.windowID = cast e.text.windowID;
-				event.text = e.text.text.toString();
+				event.text = cast e.text.text;
 			case TextEditing:
 				event.windowID = cast e.edit.windowID;
-				event.text = e.edit.text.toString();
+				event.text = cast e.edit.text;
 				event.editStart = e.edit.start;
 				event.editLength = e.edit.length;
 			case MouseMotion:
@@ -480,7 +498,7 @@ class SDL {
 				event.scrollY = e.wheel.y;
 				event.wheelX = e.wheel.integer_x;
 				event.wheelY = e.wheel.integer_y;
-				event.direction = e.wheel.direction;
+				event.direction = cast e.wheel.direction;
 				event.x = e.wheel.mouse_x;
 				event.y = e.wheel.mouse_y;
 			case User:
@@ -497,11 +515,22 @@ class SDL {
 
 	/** Starts text input (and an on-screen keyboard or IME where there is one) for the window. Off until called. **/
 	public static function startTextInput(window:Window):Bool {
-		return Native.startTextInput(window.native);
+		return SDL_Native.SDL_StartTextInput(window.native);
 	}
 
 	public static function stopTextInput(window:Window):Bool {
-		return Native.stopTextInput(window.native);
+		return SDL_Native.SDL_StopTextInput(window.native);
+	}
+
+	inline static function defaultCapitalization(type:SDL_TextInputType) {
+		switch(type) {
+			case SDL_TEXTINPUT_TYPE_TEXT:
+				return SDL_CAPITALIZE_SENTENCES;
+			case SDL_TEXTINPUT_TYPE_TEXT_NAME:
+				return SDL_CAPITALIZE_WORDS;
+			default:
+				return SDL_CAPITALIZE_NONE;
+		}
 	}
 
 	/**
@@ -511,7 +540,20 @@ class SDL {
 		these to the keyboard when it shows it; one that's already up keeps the type it had (see `androidInputType`).
 	**/
 	public static function startTextInputWith(window:Window, type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Bool {
-		return Native.startTextInputWith(window.native, type, capitalization, autocorrect, multiline);
+		if (capitalization < 0) {
+			capitalization = cast defaultCapitalization(cast type);
+		}
+
+		trace("Hey, if this causes issues refer: https://github.com/libsdl-org/SDL/blob/main/include/SDL3/SDL_keyboard.h#L496");
+		var props = SDL_Native.SDL_CreateProperties();
+		SDL_Native.SDL_SetNumberProperty(props, "SDL.textinput.type", type);
+		SDL_Native.SDL_SetNumberProperty(props, "SDL.textinput.capitalization", capitalization);
+		SDL_Native.SDL_SetBooleanProperty(props, "SDL.textinput.autocorrect", autocorrect);
+		SDL_Native.SDL_SetBooleanProperty(props, "SDL.textinput.multiline", multiline);
+		SDL_Native.SDL_SetNumberProperty(props, "SDL.textinput.android.inputtype", androidInputType(type, capitalization, autocorrect, multiline));
+		var ok = SDL_Native.SDL_StartTextInputWithProperties(window.native, props);
+		SDL_Native.SDL_DestroyProperties(props);
+		return ok;
 	}
 
 	/**
@@ -519,17 +561,22 @@ class SDL {
 		methods put their candidate window by it. On Android SDL moves its hidden text view there.
 	**/
 	public static function setTextInputArea(window:Window, x:Int, y:Int, w:Int, h:Int, cursor:Int):Bool {
-		return Native.setTextInputArea(window.native, x, y, w, h, cursor);
+		var rect = new SDL_Rect();
+		rect.x = x;
+		rect.y = y;
+		rect.w = w;
+		rect.h = h;
+		return SDL_Native.SDL_SetTextInputArea(window.native, rect, cursor);
 	}
 
 	/** Whether the on-screen keyboard is showing for the window. **/
 	public static function screenKeyboardShown(window:Window):Bool {
-		return Native.screenKeyboardShown(window.native);
+		return SDL_Native.SDL_ScreenKeyboardShown(window.native);
 	}
 
 	/** Drops the input method's composition (the `TextEditing` text) without committing it. **/
 	public static function clearComposition(window:Window):Bool {
-		return Native.clearComposition(window.native);
+		return SDL_Native.SDL_ClearComposition(window.native);
 	}
 
 	/**
@@ -537,7 +584,43 @@ class SDL {
 		Android. An app that wants an open keyboard to change type passes it to SDLActivity's `showTextInput`.
 	**/
 	public static function androidInputType(type:Int, capitalization:Int, autocorrect:Bool, multiline:Bool):Int {
-		return Native.androidInputType(type, capitalization, autocorrect, multiline);
+		var CLASS_TEXT = 0x1, CLASS_NUMBER = 0x2;
+		var PERSON_NAME = 0x60, EMAIL = 0x20, PASSWORD = 0x80, VISIBLE_PASSWORD = 0x90, NUMBER_PASSWORD = 0x10;
+		var t = 0;
+		switch(cast(type, SDL_TextInputType)) {
+			case SDL_TEXTINPUT_TYPE_TEXT_NAME: 
+				t = CLASS_TEXT | PERSON_NAME; 
+			case SDL_TEXTINPUT_TYPE_TEXT_EMAIL: 
+				t = CLASS_TEXT | EMAIL; 
+			case SDL_TEXTINPUT_TYPE_TEXT_PASSWORD_HIDDEN: 
+				t = CLASS_TEXT | PASSWORD; 
+			case SDL_TEXTINPUT_TYPE_TEXT_PASSWORD_VISIBLE: 
+				t = CLASS_TEXT | VISIBLE_PASSWORD; 
+			case SDL_TEXTINPUT_TYPE_NUMBER: 
+				t = CLASS_NUMBER; 
+			case SDL_TEXTINPUT_TYPE_NUMBER_PASSWORD_HIDDEN: 
+				t = CLASS_NUMBER | NUMBER_PASSWORD; 
+			case SDL_TEXTINPUT_TYPE_NUMBER_PASSWORD_VISIBLE: 
+				t = CLASS_NUMBER; 
+			default: 
+				t = CLASS_TEXT; 
+		}
+		switch(cast(capitalization, SDL_Capitalization)) {
+			case SDL_CAPITALIZE_LETTERS: 
+				t |= 0x1000; 
+			case SDL_CAPITALIZE_WORDS: 
+				t |= 0x2000; 
+			case SDL_CAPITALIZE_SENTENCES: 
+				t |= 0x4000; 
+			default: 
+		}
+		if (autocorrect) {
+			t |= 0x8000 | 0x10000;
+		}
+		if (multiline) {
+			t |= 0x20000;
+		}
+		return t;
 	}
 
 	/**
@@ -545,27 +628,31 @@ class SDL {
 		with `param` as an Integer. False off Android.
 	**/
 	public static function sendAndroidMessage(command:Int, param:Int):Bool {
-		return Native.sendAndroidMessage(command, param);
+		#if __ANDROID__
+		return SDL_Native.SDL_SendAndroidMessage(command,param);
+		#else
+		return false;
+		#end
 	}
 
 	public static function setClipboardText(text:String):Bool {
-		return Native.setClipboardText(text);
+		return SDL_Native.SDL_SetClipboardText(text);
 	}
 
 	public static function hasClipboardText():Bool {
-		return Native.hasClipboardText();
+		return SDL_Native.SDL_HasClipboardText();
 	}
 
 	/** The clipboard's text, or "" when there's none. **/
 	public static function getClipboardText():String {
-		return Native.getClipboardText();
+		return cast SDL_Native.SDL_GetClipboardText();
 	}
 
 	// Cursors
 
 	/** `id` takes the `SYSTEM_CURSOR_` constants. Returns null on failure. **/
 	public static function createSystemCursor(id:Int):Null<Cursor> {
-		var native = Native.createSystemCursor(id);
+		var native = SDL_Native.SDL_CreateSystemCursor(cast id);
 		if (native == null) {
 			return null;
 		}
@@ -576,17 +663,17 @@ class SDL {
 
 	/** Shows `cursor`. SDL doesn't take ownership: destroy the one it replaces when it's no longer shown. **/
 	public static function setCursor(cursor:Cursor):Bool {
-		return Native.setCursor(cursor.native);
+		return SDL_Native.SDL_SetCursor(cursor.native);
 	}
 
 	public static function destroyCursor(cursor:Cursor):Void {
-		Native.destroyCursor(cursor.native);
+		SDL_Native.SDL_DestroyCursor(cursor.native);
 	}
 
 	#if android
 	/** The app's private files folder (Android's Context.getFilesDir()), or null on failure. **/
 	public static function getAndroidInternalStoragePath():Null<String> {
-		var path = Native.getAndroidInternalStoragePath();
+		var path = SDL_Native.getAndroidInternalStoragePath();
 		return path == null ? null : path.toString();
 	}
 	#end
@@ -595,7 +682,7 @@ class SDL {
 
 	/** Returns null on failure; see `getError`. **/
 	public static function createRenderer(window:Window):Null<Renderer> {
-		var native = Native.createRenderer(window.native);
+		var native = SDL_Native.SDL_CreateRenderer(window.native, null);
 		if (native == null) {
 			return null;
 		}
@@ -605,33 +692,30 @@ class SDL {
 	}
 
 	public static function destroyRenderer(renderer:Renderer):Void {
-		Native.destroyRenderer(renderer.native);
+		SDL_Native.SDL_DestroyRenderer(renderer.native);
 	}
 
 	/** 1 to present in step with the display, 0 for no vsync. **/
 	public static function setRenderVSync(renderer:Renderer, vsync:Int):Bool {
-		return Native.setRenderVSync(renderer.native, vsync);
+		return SDL_Native.SDL_SetRenderVSync(renderer.native, vsync);
 	}
 
 	/** The renderer's output size in pixels. **/
 	public static function getCurrentRenderOutputSize(renderer:Renderer):Size {
-		Native.getCurrentRenderOutputSize(renderer.native);
-		return {w: Native.outW, h: Native.outH};
+		var w = 0, h = 0;
+		SDL_Native.SDL_GetCurrentRenderOutputSize(renderer.native, w, h);
+		return {w: w, h: h};
 	}
 
 	/** `format` takes `PIXELFORMAT_ARGB8888`, `access` the `TEXTUREACCESS_` constants. Returns null on failure. **/
-	public static function createTexture(renderer:Renderer, format:Int, access:Int, width:Int, height:Int):Null<Texture> {
-		var native = Native.createTexture(renderer.native, format, access, width, height);
-		if (native == null) {
-			return null;
-		}
+	public static function createTexture(renderer:Renderer, format:SDL_PixelFormat, access:SDL_TextureAccess, width:Int, height:Int):Null<Texture> { 
 		var texture = @:privateAccess new Texture();
-		texture.native = native;
+		texture.native = SDL_Native.SDL_CreateTexture(renderer.native, format, access, width, height);
 		return texture;
 	}
 
 	public static function destroyTexture(texture:Texture):Void {
-		Native.destroyTexture(texture.native);
+		SDL_Native.SDL_DestroyTexture(texture.native);
 	}
 
 	/**
@@ -639,29 +723,29 @@ class SDL {
 		alpha channel starts as `BLENDMODE_BLEND` in SDL3 (SDL2 started with none).
 	**/
 	public static function setTextureBlendMode(texture:Texture, mode:Int):Bool {
-		return Native.setTextureBlendMode(texture.native, mode);
+		return SDL_Native.SDL_SetTextureBlendMode(texture.native, mode);
 	}
 
 	/** How the texture is sampled when drawn at another size: `SCALEMODE_NEAREST` or `SCALEMODE_LINEAR` (the default). **/
 	public static function setTextureScaleMode(texture:Texture, mode:Int):Bool {
-		return Native.setTextureScaleMode(texture.native, mode);
+		return SDL_Native.SDL_SetTextureScaleMode(texture.native, cast mode);
 	}
 
 	/** Replaces the whole texture with `pixels`, `pitch` bytes per row. **/
 	public static function updateTexture(texture:Texture, pixels:BytesData, pitch:Int):Bool {
-		return Native.updateTexture(texture.native, pixels, pitch);
+		return SDL_Native.SDL_UpdateTexture(texture.native, null, pixels, pitch);
 	}
 
 	public static function renderClear(renderer:Renderer):Bool {
-		return Native.renderClear(renderer.native);
+		return SDL_Native.SDL_RenderClear(renderer.native);
 	}
 
 	/** Draws the whole texture over the whole output. **/
 	public static function renderTexture(renderer:Renderer, texture:Texture):Bool {
-		return Native.renderTexture(renderer.native, texture.native);
+		return SDL_Native.SDL_RenderTexture(renderer.native, texture.native, null, null);
 	}
 
 	public static function renderPresent(renderer:Renderer):Bool {
-		return Native.renderPresent(renderer.native);
+		return SDL_Native.SDL_RenderPresent(renderer.native);
 	}
 }

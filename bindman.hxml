@@ -1,0 +1,2 @@
+-lib bindman
+--macro bindman.BindMan.build("bindman.json")

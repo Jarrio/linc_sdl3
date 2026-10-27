@@ -20,7 +20,7 @@ class App {
 		SDL.init(SDL.INIT_VIDEO);
 		var window = SDL.createWindow("Demo", WIDTH * 8, HEIGHT * 8, SDL.WINDOW_RESIZABLE);
 		var renderer = SDL.createRenderer(window);
-		var texture = SDL.createTexture(renderer, SDL.PIXELFORMAT_ARGB8888, SDL.TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+		var texture = SDL.createTexture(renderer, cast SDL.PIXELFORMAT_ARGB8888, cast SDL.TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
 		SDL.setTextureScaleMode(texture, SDL.SCALEMODE_NEAREST);
 		SDL.setRenderVSync(renderer, 1);
 		SDL.startTextInput(window);
