@@ -1,0 +1,24 @@
+{
+    "out": "interop",
+    "libraries": [
+        {
+            "library": "sdl",
+            "includeKeyword": "SDL",
+            "includeDirectory": "vendor/linux-x64/include/SDL3",
+            "includeHeader": "SDL.h",
+            "replace": {
+                "function:": "func:",
+                "override:": "overridePath:",
+                "@:buildXml(\"\")": "@:build(linc.Linc.xml(\"sdl3\"))",
+                "SDL.h": "linc_sdl3.h",
+                "extern class SDL {": "extern class SDL_Native {",
+
+                "@:cpp.ValueType({type: \"SDL_Texture\"})": "@:cpp.PointerType({type: \"SDL_Texture\"})",
+                "    var refcount:cpp.Int32;\n\n    function new():Void;": "    var refcount:cpp.Int32;"
+            },
+            "ignore": ["/usr/local/include/SDL3/SDL_stdinc.h:132:7~alloca"],
+            "cppXML": "",
+            "headerDefines": ["SDL_PLATFORM_ANDROID", "SDL_PLATFORM_LINUX"]
+        }
+    ]
+}
