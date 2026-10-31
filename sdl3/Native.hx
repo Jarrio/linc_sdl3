@@ -196,6 +196,15 @@ extern class Native {
 	@:native("SDL_SetHint")
 	static function setHint(name:ConstCharStar, value:ConstCharStar):Bool;
 
+	@:native("SDL_EnableScreenSaver")
+	static function enableScreenSaver():Bool;
+
+	@:native("SDL_DisableScreenSaver")
+	static function disableScreenSaver():Bool;
+
+	@:native("SDL_ScreenSaverEnabled")
+	static function screenSaverEnabled():Bool;
+
 	// Windows
 
 	@:native("SDL_CreateWindow")
@@ -358,6 +367,9 @@ extern class Native {
 	#if android
 	@:native("SDL_GetAndroidInternalStoragePath")
 	static function getAndroidInternalStoragePath():ConstCharStar;
+
+	@:native("SDL_GetAndroidExternalStoragePath")
+	static function getAndroidExternalStoragePath():ConstCharStar;
 	#end
 
 	// Out-values of the linc::sdl3 helpers above

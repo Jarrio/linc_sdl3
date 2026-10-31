@@ -194,6 +194,7 @@ class SDL {
 		from `TextEditing` events (IBus and Fcitx then send it rather than showing it in their own window).
 	**/
 	public static inline var HINT_IME_IMPLEMENTED_UI = "SDL_IME_IMPLEMENTED_UI";
+	public static inline var HINT_VIDEO_ALLOW_SCREENSAVER = "SDL_VIDEO_ALLOW_SCREENSAVER";
 
 	public static inline var TOUCH_MOUSE_ID = -1;
 	public static inline var PEN_MOUSE_ID = -2;
@@ -291,6 +292,23 @@ class SDL {
 	/** `name` takes the `HINT_` constants. **/
 	public static function setHint(name:String, value:String):Bool {
 		return Native.setHint(name, value);
+	}
+
+	/** Lets the screen dim, sleep and start its screensaver as the system's settings say. Needs the video subsystem. **/
+	public static function enableScreenSaver():Bool {
+		return Native.enableScreenSaver();
+	}
+
+	/**
+		Keeps the screen on while the app runs: no dimming, sleeping or screensaver (on Android, the window's
+		KEEP_SCREEN_ON). SDL starts this way unless `HINT_VIDEO_ALLOW_SCREENSAVER` is "1" before `init`.
+	**/
+	public static function disableScreenSaver():Bool {
+		return Native.disableScreenSaver();
+	}
+
+	public static function screenSaverEnabled():Bool {
+		return Native.screenSaverEnabled();
 	}
 
 	// Windows
@@ -587,6 +605,15 @@ class SDL {
 	/** The app's private files folder (Android's Context.getFilesDir()), or null on failure. **/
 	public static function getAndroidInternalStoragePath():Null<String> {
 		var path = Native.getAndroidInternalStoragePath();
+		return path == null ? null : path.toString();
+	}
+
+	/**
+		The app's external files folder (Android's Context.getExternalFilesDir(null)), which Android makes for the app
+		if it's missing, or null on failure. Other apps can't read it; adb can, without run-as.
+	**/
+	public static function getAndroidExternalStoragePath():Null<String> {
+		var path = Native.getAndroidExternalStoragePath();
 		return path == null ? null : path.toString();
 	}
 	#end
