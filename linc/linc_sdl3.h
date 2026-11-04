@@ -205,7 +205,7 @@ static_assert(SDL_EVENT_KEY_DOWN == 0x300 && SDL_EVENT_KEY_UP == 0x301 && SDL_EV
 static_assert(SDL_EVENT_TEXT_EDITING == 0x302, "EventType.TextEditing");
 static_assert(SDL_EVENT_SCREEN_KEYBOARD_SHOWN == 0x308 && SDL_EVENT_SCREEN_KEYBOARD_HIDDEN == 0x309, "EventType screen keyboard");
 static_assert(SDL_EVENT_MOUSE_MOTION == 0x400 && SDL_EVENT_MOUSE_BUTTON_DOWN == 0x401 && SDL_EVENT_MOUSE_BUTTON_UP == 0x402 && SDL_EVENT_MOUSE_WHEEL == 0x403, "EventType mouse");
-static_assert(SDL_EVENT_FINGER_DOWN == 0x700, "EventType.FingerDown");
+static_assert(SDL_EVENT_FINGER_DOWN == 0x700 && SDL_EVENT_FINGER_UP == 0x701 && SDL_EVENT_FINGER_MOTION == 0x702, "EventType.Finger");
 static_assert(SDL_EVENT_POLL_SENTINEL == 0x7f00 && SDL_EVENT_USER == 0x8000, "EventType sentinel and user");
 static_assert(SDLK_ESCAPE == 0x1b, "SDL.KEY_ESCAPE");
 static_assert((Sint32)SDL_TOUCH_MOUSEID == -1 && (Sint32)SDL_PEN_MOUSEID == -2, "SDL.TOUCH_MOUSE_ID / PEN_MOUSE_ID");

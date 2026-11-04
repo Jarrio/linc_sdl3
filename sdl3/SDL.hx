@@ -88,6 +88,8 @@ enum abstract EventType(Int) from Int to Int {
 	var MouseButtonUp = 0x402;
 	var MouseWheel = 0x403;
 	var FingerDown = 0x700;
+	var FingerUp = 0x701;
+	var FingerMotion = 0x702;
 	/**
 		The system took a touch over (Android's edge back gesture, palm rejection). SDL ends the mouse press it made
 		from the touch with an ordinary button release, queued just before this.
@@ -125,7 +127,10 @@ class Event {
 
 	public var editLength:Int = -1;
 
-	/** Mouse events: the mouse that sent it. `TOUCH_MOUSE_ID` marks events SDL made from touches. **/
+	/**
+		Mouse events: the mouse that sent it. `TOUCH_MOUSE_ID` marks events SDL made from touches. Finger events: the finger,
+		with `x` and `y` from 0 to 1 across the window.
+	**/
 	public var which:Int = 0;
 
 	/** Mouse events: the position in window units. For `MouseWheel`, where the pointer was. **/
@@ -501,6 +506,11 @@ class SDL {
 				event.direction = e.wheel.direction;
 				event.x = e.wheel.mouse_x;
 				event.y = e.wheel.mouse_y;
+			case FingerDown | FingerUp | FingerMotion | FingerCanceled:
+				event.windowID = cast e.tfinger.windowID;
+				event.which = cast e.tfinger.fingerID;
+				event.x = e.tfinger.x;
+				event.y = e.tfinger.y;
 			case User:
 				event.code = e.user.code;
 			case WindowShown | WindowExposed | WindowResized | WindowPixelSizeChanged | WindowRestored | WindowMouseEnter | WindowMouseLeave | WindowFocusGained | WindowFocusLost | WindowCloseRequested | WindowDisplayChanged | WindowDisplayScaleChanged | WindowSafeAreaChanged:

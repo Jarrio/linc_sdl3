@@ -114,6 +114,17 @@ extern class NativeMouseWheelEvent {
 
 @:semantics(value)
 @:include("linc_sdl3.h")
+@:cpp.ValueType({type: "SDL_TouchFingerEvent"})
+extern class NativeTouchFingerEvent {
+	var windowID:UInt32;
+	// SDL's id is 64 bits; only its low 32 are read, which is enough to tell the fingers down at once apart.
+	var fingerID:UInt32;
+	var x:Float32;
+	var y:Float32;
+}
+
+@:semantics(value)
+@:include("linc_sdl3.h")
 @:cpp.ValueType({type: "SDL_UserEvent"})
 extern class NativeUserEvent {
 	var code:Int;
@@ -139,6 +150,7 @@ extern class NativeEvent {
 	var motion:NativeMouseMotionEvent;
 	var button:NativeMouseButtonEvent;
 	var wheel:NativeMouseWheelEvent;
+	var tfinger:NativeTouchFingerEvent;
 	var window:NativeWindowEvent;
 	var user:NativeUserEvent;
 
