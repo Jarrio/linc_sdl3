@@ -100,6 +100,9 @@ namespace linc {
 			}
 		}
 
+		// Number pads SDL has no type for: Android's flags give them, and SDL hears its plain number type.
+		const int TEXTINPUT_TYPE_NUMBER_DECIMAL = 100, TEXTINPUT_TYPE_NUMBER_SIGNED = 101, TEXTINPUT_TYPE_NUMBER_SIGNED_DECIMAL = 102;
+
 		#ifdef __ANDROID__
 		// android.text.InputType for the properties, as SDL's Android_ShowScreenKeyboard works it out.
 		inline int androidInputType(int type, int capitalization, bool autocorrect, bool multiline) {
@@ -114,6 +117,9 @@ namespace linc {
 				case SDL_TEXTINPUT_TYPE_NUMBER: t = CLASS_NUMBER; break;
 				case SDL_TEXTINPUT_TYPE_NUMBER_PASSWORD_HIDDEN: t = CLASS_NUMBER | NUMBER_PASSWORD; break;
 				case SDL_TEXTINPUT_TYPE_NUMBER_PASSWORD_VISIBLE: t = CLASS_NUMBER; break;
+				case TEXTINPUT_TYPE_NUMBER_DECIMAL: t = CLASS_NUMBER | 0x2000; break;
+				case TEXTINPUT_TYPE_NUMBER_SIGNED: t = CLASS_NUMBER | 0x1000; break;
+				case TEXTINPUT_TYPE_NUMBER_SIGNED_DECIMAL: t = CLASS_NUMBER | 0x3000; break;
 				default: t = CLASS_TEXT; break;
 			}
 			switch (capitalization) {
@@ -122,8 +128,10 @@ namespace linc {
 				case SDL_CAPITALIZE_SENTENCES: t |= 0x4000; break;
 				default: break;
 			}
+			// TYPE_TEXT_FLAG_AUTO_CORRECT alone. SDL's own adds AUTO_COMPLETE, which says the app shows its own suggestions,
+			// and a keyboard that takes it at its word, such as SwiftKey, hides its suggestion row.
 			if (autocorrect) {
-				t |= 0x8000 | 0x10000;
+				t |= 0x8000;
 			}
 			if (multiline) {
 				t |= 0x20000;
@@ -147,7 +155,7 @@ namespace linc {
 				capitalization = defaultCapitalization(type);
 			}
 			SDL_PropertiesID props = SDL_CreateProperties();
-			SDL_SetNumberProperty(props, SDL_PROP_TEXTINPUT_TYPE_NUMBER, type);
+			SDL_SetNumberProperty(props, SDL_PROP_TEXTINPUT_TYPE_NUMBER, type >= TEXTINPUT_TYPE_NUMBER_DECIMAL ? SDL_TEXTINPUT_TYPE_NUMBER : type);
 			SDL_SetNumberProperty(props, SDL_PROP_TEXTINPUT_CAPITALIZATION_NUMBER, capitalization);
 			SDL_SetBooleanProperty(props, SDL_PROP_TEXTINPUT_AUTOCORRECT_BOOLEAN, autocorrect);
 			SDL_SetBooleanProperty(props, SDL_PROP_TEXTINPUT_MULTILINE_BOOLEAN, multiline);

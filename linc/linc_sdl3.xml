@@ -4,6 +4,8 @@
     <pragma once="true" />
 
     <files id="haxe">
+        <!-- Its inline functions are compiled into the Haxe classes that call them. -->
+        <depend name="${LINC_SDL3_PATH}linc/linc_sdl3.h" />
         <compilerflag value="-I${LINC_SDL3_PATH}linc/" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/linux-x64/include/" if="linux" />
         <compilerflag value="-I${LINC_SDL3_PATH}vendor/windows/include/" if="windows" />
