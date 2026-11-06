@@ -125,6 +125,24 @@ extern class NativeTouchFingerEvent {
 
 @:semantics(value)
 @:include("linc_sdl3.h")
+@:cpp.ValueType({type: "SDL_PinchFingerEvent"})
+extern class NativePinchFingerEvent {
+	var windowID:UInt32;
+	var scale:Float32;
+}
+
+@:semantics(value)
+@:include("linc_sdl3.h")
+@:cpp.ValueType({type: "SDL_DropEvent"})
+extern class NativeDropEvent {
+	var windowID:UInt32;
+	var x:Float32;
+	var y:Float32;
+	var data:ConstCharStar;
+}
+
+@:semantics(value)
+@:include("linc_sdl3.h")
 @:cpp.ValueType({type: "SDL_UserEvent"})
 extern class NativeUserEvent {
 	var code:Int;
@@ -151,6 +169,8 @@ extern class NativeEvent {
 	var button:NativeMouseButtonEvent;
 	var wheel:NativeMouseWheelEvent;
 	var tfinger:NativeTouchFingerEvent;
+	var pinch:NativePinchFingerEvent;
+	var drop:NativeDropEvent;
 	var window:NativeWindowEvent;
 	var user:NativeUserEvent;
 
@@ -291,6 +311,26 @@ extern class Native {
 
 	@:native("linc::sdl3::pushUserEvent")
 	static function pushUserEvent(code:Int):Bool;
+
+	// File dialogs
+
+	@:native("linc::sdl3::showFileDialog")
+	static function showFileDialog(kind:Int, id:Int, code:Int, window:NativeWindow, filters:ConstCharStar, location:ConstCharStar, many:Bool):Void;
+
+	@:native("linc::sdl3::nextFileDialog")
+	static function nextFileDialog():Int;
+
+	@:native("linc::sdl3::fileDialogFailed")
+	static function fileDialogFailed():Bool;
+
+	@:native("linc::sdl3::fileDialogError")
+	static function fileDialogError():ConstCharStar;
+
+	@:native("linc::sdl3::fileDialogPathCount")
+	static function fileDialogPathCount():Int;
+
+	@:native("linc::sdl3::fileDialogPath")
+	static function fileDialogPath(index:Int):ConstCharStar;
 
 	// Keyboard and clipboard
 

@@ -6,6 +6,11 @@
 
 #include <SDL3/SDL.h>
 
+#include <deque>
+#include <mutex>
+#include <string>
+#include <vector>
+
 namespace linc {
 	namespace sdl3 {
 		// SDL reports sizes through int pointers. The Haxe side reads them back as extern vars rather
@@ -55,6 +60,100 @@ namespace linc {
 			event.type = SDL_EVENT_USER;
 			event.user.code = code;
 			return SDL_PushEvent(&event);
+		}
+
+		// A file dialog, from being shown to its answer being read. SDL may answer on a thread of its own, where Haxe
+		// can't run, so the answer waits here and a user event tells the main thread. Filters must last until then.
+		struct FileDialog {
+			int id;
+			int code;
+			std::vector<std::string> filterText;
+			std::vector<SDL_DialogFileFilter> filters;
+			std::string location;
+			std::vector<std::string> paths;
+			bool failed = false;
+			std::string error;
+		};
+
+		inline std::mutex fileDialogLock;
+		inline std::deque<FileDialog *> answeredFileDialogs;
+		inline FileDialog *readingFileDialog = nullptr;
+
+		inline void SDLCALL fileDialogAnswered(void *userdata, const char *const *filelist, int filter) {
+			FileDialog *dialog = (FileDialog *)userdata;
+			if (filelist) {
+				for (; *filelist; filelist++) {
+					dialog->paths.push_back(*filelist);
+				}
+			} else {
+				dialog->failed = true;
+				dialog->error = SDL_GetError();
+			}
+			{
+				std::lock_guard<std::mutex> lock(fileDialogLock);
+				answeredFileDialogs.push_back(dialog);
+			}
+			pushUserEvent(dialog->code);
+		}
+
+		// `kind`: 0 open, 1 save, 2 folder. `filters`: each filter's name and pattern, a line each. An empty `location`
+		// lets the system choose.
+		inline void showFileDialog(int kind, int id, int code, SDL_Window *window, const char *filters, const char *location, bool many) {
+			FileDialog *dialog = new FileDialog();
+			dialog->id = id;
+			dialog->code = code;
+			dialog->location = location;
+			const char *start = filters;
+			while (*start) {
+				const char *end = SDL_strchr(start, '\n');
+				if (!end) {
+					end = start + SDL_strlen(start);
+				}
+				dialog->filterText.emplace_back(start, end);
+				start = *end ? end + 1 : end;
+			}
+			for (size_t i = 0; i + 1 < dialog->filterText.size(); i += 2) {
+				dialog->filters.push_back({dialog->filterText[i].c_str(), dialog->filterText[i + 1].c_str()});
+			}
+			const SDL_DialogFileFilter *list = dialog->filters.empty() ? NULL : dialog->filters.data();
+			int count = (int)dialog->filters.size();
+			const char *from = dialog->location.empty() ? NULL : dialog->location.c_str();
+			if (kind == 0) {
+				SDL_ShowOpenFileDialog(fileDialogAnswered, dialog, window, list, count, from, many);
+			} else if (kind == 1) {
+				SDL_ShowSaveFileDialog(fileDialogAnswered, dialog, window, list, count, from);
+			} else {
+				SDL_ShowOpenFolderDialog(fileDialogAnswered, dialog, window, from, many);
+			}
+		}
+
+		// Takes the next answer to read, and returns its dialog's id, or -1 for none. The one before it goes.
+		inline int nextFileDialog() {
+			delete readingFileDialog;
+			readingFileDialog = nullptr;
+			std::lock_guard<std::mutex> lock(fileDialogLock);
+			if (answeredFileDialogs.empty()) {
+				return -1;
+			}
+			readingFileDialog = answeredFileDialogs.front();
+			answeredFileDialogs.pop_front();
+			return readingFileDialog->id;
+		}
+
+		inline bool fileDialogFailed() {
+			return readingFileDialog->failed;
+		}
+
+		inline const char *fileDialogError() {
+			return readingFileDialog->error.c_str();
+		}
+
+		inline int fileDialogPathCount() {
+			return (int)readingFileDialog->paths.size();
+		}
+
+		inline const char *fileDialogPath(int index) {
+			return readingFileDialog->paths[index].c_str();
 		}
 
 		// SDL3 hands back a copy the caller frees.
@@ -214,6 +313,9 @@ static_assert(SDL_EVENT_TEXT_EDITING == 0x302, "EventType.TextEditing");
 static_assert(SDL_EVENT_SCREEN_KEYBOARD_SHOWN == 0x308 && SDL_EVENT_SCREEN_KEYBOARD_HIDDEN == 0x309, "EventType screen keyboard");
 static_assert(SDL_EVENT_MOUSE_MOTION == 0x400 && SDL_EVENT_MOUSE_BUTTON_DOWN == 0x401 && SDL_EVENT_MOUSE_BUTTON_UP == 0x402 && SDL_EVENT_MOUSE_WHEEL == 0x403, "EventType mouse");
 static_assert(SDL_EVENT_FINGER_DOWN == 0x700 && SDL_EVENT_FINGER_UP == 0x701 && SDL_EVENT_FINGER_MOTION == 0x702, "EventType.Finger");
+static_assert(SDL_EVENT_PINCH_BEGIN == 0x710 && SDL_EVENT_PINCH_UPDATE == 0x711 && SDL_EVENT_PINCH_END == 0x712, "EventType pinch");
+static_assert(SDL_EVENT_DROP_FILE == 0x1000 && SDL_EVENT_DROP_TEXT == 0x1001 && SDL_EVENT_DROP_BEGIN == 0x1002, "EventType drop");
+static_assert(SDL_EVENT_DROP_COMPLETE == 0x1003 && SDL_EVENT_DROP_POSITION == 0x1004, "EventType drop end");
 static_assert(SDL_EVENT_POLL_SENTINEL == 0x7f00 && SDL_EVENT_USER == 0x8000, "EventType sentinel and user");
 static_assert(SDLK_ESCAPE == 0x1b, "SDL.KEY_ESCAPE");
 static_assert((Sint32)SDL_TOUCH_MOUSEID == -1 && (Sint32)SDL_PEN_MOUSEID == -2, "SDL.TOUCH_MOUSE_ID / PEN_MOUSE_ID");

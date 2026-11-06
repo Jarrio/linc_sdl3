@@ -95,6 +95,23 @@ enum abstract EventType(Int) from Int to Int {
 		from the touch with an ordinary button release, queued just before this.
 	**/
 	var FingerCanceled = 0x703;
+	/**
+		A pinch the system recognised. `PinchUpdate` has `scale`, which isn't the same everywhere, whatever SDL's header
+		says: X11 and Wayland measure it from `PinchBegin`, and macOS from the last update.
+	**/
+	var PinchBegin = 0x710;
+	var PinchUpdate = 0x711;
+	var PinchEnd = 0x712;
+	/**
+		Something dragged from another app. `DropBegin` starts it and `DropPosition` follows it over the window with `x`
+		and `y`. A `DropFile` or `DropText` comes for each item dropped, with its path or text in `text`, and
+		`DropComplete` ends it, with no items before it if the drag left without dropping.
+	**/
+	var DropFile = 0x1000;
+	var DropText = 0x1001;
+	var DropBegin = 0x1002;
+	var DropComplete = 0x1003;
+	var DropPosition = 0x1004;
 	/** Ends each batch of events SDL pumps. It isn't input. **/
 	var PollSentinel = 0x7f00;
 	/** Sent by `SDL.pushUserEvent`. **/
@@ -116,7 +133,10 @@ class Event {
 	public var down:Bool = false;
 	public var repeat:Bool = false;
 
-	/** `TextInput`: the UTF-8 text typed. `TextEditing`: the text being composed, empty when the composition ends. **/
+	/**
+		`TextInput`: the UTF-8 text typed. `TextEditing`: the text being composed, empty when the composition ends.
+		`DropFile`: the file's path. `DropText`: the text.
+	**/
 	public var text:String = null;
 
 	/**
@@ -133,7 +153,7 @@ class Event {
 	**/
 	public var which:Int = 0;
 
-	/** Mouse events: the position in window units. For `MouseWheel`, where the pointer was. **/
+	/** Mouse and drop events: the position in window units. For `MouseWheel`, where the pointer was. **/
 	public var x:Float = 0;
 
 	public var y:Float = 0;
@@ -155,6 +175,9 @@ class Event {
 
 	/** `MouseWheel`: `WHEEL_NORMAL` (0), or flipped when the system inverts scrolling. **/
 	public var direction:Int = 0;
+
+	/** `PinchUpdate`: above 1 moving apart. See `PinchBegin` for what it's measured from. **/
+	public var scale:Float = 1;
 
 	/** Window events: for `WindowResized` and `WindowPixelSizeChanged`, the new width and height. **/
 	public var data1:Int = 0;
@@ -465,7 +488,42 @@ class SDL {
 		return Native.pushUserEvent(code);
 	}
 
-	// Inlined into the two functions above, so no generated wrapper has to pass a NativeEvent around.
+	// File dialogs
+
+	public static inline var FILE_DIALOG_OPEN = 0;
+	public static inline var FILE_DIALOG_SAVE = 1;
+	public static inline var FILE_DIALOG_FOLDER = 2;
+
+	/**
+		Shows the system's file dialog of `kind` (the `FILE_DIALOG_` constants) over `window` and returns at once. A
+		`User` event with `code` comes once it's answered, then `nextFileDialog` finds `id`. `filters` has each filter's
+		name and pattern, a line each, as in "Images\npng;jpg\nAll\n*", and is ignored for a folder; `many` is ignored for
+		saving. An empty `location` lets the system choose.
+	**/
+	public static function showFileDialog(kind:Int, id:Int, code:Int, window:Window, filters:String, location:String, many:Bool):Void {
+		Native.showFileDialog(kind, id, code, window.native, filters, location, many);
+	}
+
+	/**
+		Moves on to the next dialog that's been answered and returns the `id` it was shown with, or -1 for none. Its answer
+		can be read until the next call, which must follow to free it.
+	**/
+	public static function nextFileDialog():Int {
+		return Native.nextFileDialog();
+	}
+
+	/** Why the dialog couldn't be shown, or null if it was: no paths and no error means it was cancelled. **/
+	public static function fileDialogError():String {
+		return Native.fileDialogFailed() ? Native.fileDialogError().toString() : null;
+	}
+
+	/** The paths chosen. A cancel through `zenity` comes as one empty path, which goes. **/
+	public static function fileDialogPaths():Array<String> {
+		var paths = [for (i in 0...Native.fileDialogPathCount()) Native.fileDialogPath(i).toString()];
+		return paths.filter(path -> path != "");
+	}
+
+	// Inlined into pollEvent and waitEventTimeout, so no generated wrapper has to pass a NativeEvent around.
 	extern inline static function fillEvent(event:Event, e:NativeEvent):Void {
 		event.type = cast e.type;
 		switch (event.type) {
@@ -511,6 +569,18 @@ class SDL {
 				event.which = cast e.tfinger.fingerID;
 				event.x = e.tfinger.x;
 				event.y = e.tfinger.y;
+			case DropFile | DropText:
+				event.windowID = cast e.drop.windowID;
+				event.text = e.drop.data.toString();
+				event.x = e.drop.x;
+				event.y = e.drop.y;
+			case DropBegin | DropComplete | DropPosition:
+				event.windowID = cast e.drop.windowID;
+				event.x = e.drop.x;
+				event.y = e.drop.y;
+			case PinchBegin | PinchUpdate | PinchEnd:
+				event.windowID = cast e.pinch.windowID;
+				event.scale = e.pinch.scale;
 			case User:
 				event.code = e.user.code;
 			case WindowShown | WindowExposed | WindowResized | WindowPixelSizeChanged | WindowRestored | WindowMouseEnter | WindowMouseLeave | WindowFocusGained | WindowFocusLost | WindowCloseRequested | WindowDisplayChanged | WindowDisplayScaleChanged | WindowSafeAreaChanged:
