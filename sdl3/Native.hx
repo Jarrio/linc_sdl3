@@ -312,6 +312,14 @@ extern class Native {
 	@:native("linc::sdl3::pushUserEvent")
 	static function pushUserEvent(code:Int):Bool;
 
+	// Files
+
+	@:native("linc::sdl3::loadFile")
+	static function loadFile(file:ConstCharStar):BytesData;
+
+	@:native("linc::sdl3::saveFile")
+	static function saveFile(file:ConstCharStar, data:BytesData, length:Int):Bool;
+
 	// File dialogs
 
 	@:native("linc::sdl3::showFileDialog")

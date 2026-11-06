@@ -156,6 +156,33 @@ namespace linc {
 			return readingFileDialog->paths[index].c_str();
 		}
 
+		// A whole file's bytes, or null. SDL takes a path or, on Android, a content:// address. A slow file doesn't hold up
+		// other threads' collections.
+		inline ::Array<unsigned char> loadFile(const char *file) {
+			std::string path(file);
+			size_t size = 0;
+			hx::EnterGCFreeZone();
+			void *data = SDL_LoadFile(path.c_str(), &size);
+			hx::ExitGCFreeZone();
+			if (!data) {
+				return null();
+			}
+			::Array<unsigned char> bytes = ::Array_obj<unsigned char>::__new((int)size, (int)size);
+			if (size > 0) {
+				SDL_memcpy(bytes->getBase(), data, size);
+			}
+			SDL_free(data);
+			return bytes;
+		}
+
+		inline bool saveFile(const char *file, ::Array<unsigned char> bytes, int length) {
+			std::string path(file);
+			hx::EnterGCFreeZone();
+			bool saved = SDL_SaveFile(path.c_str(), bytes->getBase(), (size_t)length);
+			hx::ExitGCFreeZone();
+			return saved;
+		}
+
 		// SDL3 hands back a copy the caller frees.
 		inline ::String getClipboardText() {
 			char *text = SDL_GetClipboardText();

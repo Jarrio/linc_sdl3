@@ -488,6 +488,18 @@ class SDL {
 		return Native.pushUserEvent(code);
 	}
 
+	// Files
+
+	/** All of `file`, a path or on Android a `content://` address. Returns null on failure; see `getError`. **/
+	public static function loadFile(file:String):BytesData {
+		return Native.loadFile(file);
+	}
+
+	/** Writes the first `length` bytes of `data` over `file`, a path or on Android a `content://` address. **/
+	public static function saveFile(file:String, data:BytesData, length:Int):Bool {
+		return Native.saveFile(file, data, length);
+	}
+
 	// File dialogs
 
 	public static inline var FILE_DIALOG_OPEN = 0;
