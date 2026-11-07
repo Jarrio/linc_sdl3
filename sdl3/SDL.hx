@@ -63,9 +63,11 @@ enum abstract EventType(Int) from Int to Int {
 	/** The system switched between light and dark; `getSystemTheme` says which. **/
 	var SystemThemeChanged = 0x108;
 	var WindowShown = 0x202;
+	var WindowHidden = 0x203;
 	var WindowExposed = 0x204;
 	var WindowResized = 0x206;
 	var WindowPixelSizeChanged = 0x207;
+	var WindowMinimized = 0x209;
 	var WindowRestored = 0x20b;
 	var WindowMouseEnter = 0x20c;
 	var WindowMouseLeave = 0x20d;
@@ -75,6 +77,8 @@ enum abstract EventType(Int) from Int to Int {
 	var WindowDisplayChanged = 0x213;
 	var WindowDisplayScaleChanged = 0x214;
 	var WindowSafeAreaChanged = 0x215;
+	/** Covered wholly by other windows, as far as the system tells (X11, Wayland, macOS); `WindowExposed` ends it. **/
+	var WindowOccluded = 0x216;
 	var KeyDown = 0x300;
 	var KeyUp = 0x301;
 	/** An input method's text being composed, not yet committed: `text`, with `editStart` and `editLength`. **/
@@ -595,7 +599,7 @@ class SDL {
 				event.scale = e.pinch.scale;
 			case User:
 				event.code = e.user.code;
-			case WindowShown | WindowExposed | WindowResized | WindowPixelSizeChanged | WindowRestored | WindowMouseEnter | WindowMouseLeave | WindowFocusGained | WindowFocusLost | WindowCloseRequested | WindowDisplayChanged | WindowDisplayScaleChanged | WindowSafeAreaChanged:
+			case WindowShown | WindowHidden | WindowExposed | WindowResized | WindowPixelSizeChanged | WindowMinimized | WindowRestored | WindowMouseEnter | WindowMouseLeave | WindowFocusGained | WindowFocusLost | WindowCloseRequested | WindowDisplayChanged | WindowDisplayScaleChanged | WindowSafeAreaChanged | WindowOccluded:
 				event.windowID = cast e.window.windowID;
 				event.data1 = e.window.data1;
 				event.data2 = e.window.data2;
