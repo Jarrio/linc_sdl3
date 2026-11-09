@@ -675,6 +675,26 @@ class SDL {
 		return Native.getClipboardText();
 	}
 
+	/**
+		Puts `texts` on the clipboard at once, each under the MIME type at the same place in `types`: the same thing as
+		"text/plain;charset=utf-8" and "text/html", say, for apps that take either. Plain text also goes under the
+		other names the system knows text by. On Android SDL keeps only the plain text, and on Windows only text and
+		images.
+	**/
+	public static function setClipboardTexts(types:Array<String>, texts:Array<String>):Bool {
+		return Native.setClipboardTexts(types, texts);
+	}
+
+	/** The clipboard's data of MIME type `type` (such as "text/html") as text, or null when it has none. **/
+	public static function getClipboardData(type:String):Null<String> {
+		return Native.getClipboardData(type);
+	}
+
+	/** Whether the clipboard has data of MIME type `type`. **/
+	public static function hasClipboardData(type:String):Bool {
+		return Native.hasClipboardData(type);
+	}
+
 	/** Opens `url` in the system's app for it (a browser, mail, a file's app); false if nothing could. **/
 	public static function openURL(url:String):Bool {
 		return Native.openURL(url);

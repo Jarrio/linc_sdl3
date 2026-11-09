@@ -191,6 +191,104 @@ namespace linc {
 			return result;
 		}
 
+		// What setClipboardTexts offers, each text under its MIME types. SDL asks for one when another app pastes
+		// (or as it's set, on Windows), and drops it through clipboardTextsDone once something else is put there.
+		struct ClipboardTexts {
+			std::vector<std::string> types;
+			std::vector<size_t> textOf;
+			std::vector<std::string> texts;
+		};
+
+		inline const void *clipboardTextFor(void *userdata, const char *type, size_t *size) {
+			ClipboardTexts *offered = (ClipboardTexts *)userdata;
+			for (size_t i = 0; i < offered->types.size(); i++) {
+				if (offered->types[i] == type) {
+					const std::string &text = offered->texts[offered->textOf[i]];
+					*size = text.size();
+					return text.data();
+				}
+			}
+			*size = 0;
+			return nullptr;
+		}
+
+		inline void clipboardTextsDone(void *userdata) {
+			delete (ClipboardTexts *)userdata;
+		}
+
+		// Puts `texts` on the clipboard at once, each under the MIME type at the same place in `types`. Plain text
+		// ("text/plain;charset=utf-8") also goes under the other names the system knows text by, as SDL's own text does.
+		inline bool setClipboardTexts(::Array<::String> types, ::Array<::String> texts) {
+			#if defined(__APPLE__)
+			static const char *const plainNames[] = {"text/plain;charset=utf-8"};
+			#else
+			static const char *const plainNames[] = {"text/plain;charset=utf-8", "UTF8_STRING", "text/plain", "TEXT", "STRING"};
+			#endif
+			ClipboardTexts *offered = new ClipboardTexts();
+			for (int i = 0; i < types->length && i < texts->length; i++) {
+				std::string type = types->__get(i).utf8_str();
+				offered->texts.push_back(std::string(texts->__get(i).utf8_str()));
+				if (type == "text/plain;charset=utf-8") {
+					for (const char *name : plainNames) {
+						offered->types.push_back(name);
+						offered->textOf.push_back(offered->texts.size() - 1);
+					}
+				} else {
+					offered->types.push_back(type);
+					offered->textOf.push_back(offered->texts.size() - 1);
+				}
+			}
+			std::vector<const char *> names;
+			for (const std::string &type : offered->types) {
+				names.push_back(type.c_str());
+			}
+			return SDL_SetClipboardData(clipboardTextFor, clipboardTextsDone, offered, names.data(), names.size());
+		}
+
+		// The clipboard's data of MIME type `type` as text, or null when there's none. UTF-8, or UTF-16 after a
+		// byte order mark (Firefox has put HTML on the clipboard so).
+		inline ::String getClipboardData(::String type) {
+			size_t size = 0;
+			void *data = SDL_GetClipboardData(type.utf8_str(), &size);
+			if (!data) {
+				return null();
+			}
+			const unsigned char *bytes = (const unsigned char *)data;
+			std::string text;
+			if (size >= 2 && ((bytes[0] == 0xFF && bytes[1] == 0xFE) || (bytes[0] == 0xFE && bytes[1] == 0xFF))) {
+				bool little = bytes[0] == 0xFF;
+				for (size_t i = 2; i + 1 < size; i += 2) {
+					uint32_t c = little ? (bytes[i] | (bytes[i + 1] << 8)) : ((bytes[i] << 8) | bytes[i + 1]);
+					if (c >= 0xD800 && c < 0xDC00 && i + 3 < size) {
+						uint32_t low = little ? (bytes[i + 2] | (bytes[i + 3] << 8)) : ((bytes[i + 2] << 8) | bytes[i + 3]);
+						if (low >= 0xDC00 && low < 0xE000) {
+							c = 0x10000 + ((c - 0xD800) << 10) + (low - 0xDC00);
+							i += 2;
+						}
+					}
+					if (c < 0x80) {
+						text += (char)c;
+					} else if (c < 0x800) {
+						text += (char)(0xC0 | (c >> 6));
+						text += (char)(0x80 | (c & 0x3F));
+					} else if (c < 0x10000) {
+						text += (char)(0xE0 | (c >> 12));
+						text += (char)(0x80 | ((c >> 6) & 0x3F));
+						text += (char)(0x80 | (c & 0x3F));
+					} else {
+						text += (char)(0xF0 | (c >> 18));
+						text += (char)(0x80 | ((c >> 12) & 0x3F));
+						text += (char)(0x80 | ((c >> 6) & 0x3F));
+						text += (char)(0x80 | (c & 0x3F));
+					}
+				}
+			} else {
+				text.assign((const char *)data, size);
+			}
+			SDL_free(data);
+			return ::String::create(text.c_str(), (int)text.size());
+		}
+
 		// SDL_SystemCursor, SDL_PixelFormat and SDL_TextureAccess are enums, and C++ won't convert the ints
 		// Haxe passes into them implicitly.
 		inline SDL_Cursor *createSystemCursor(int id) {

@@ -378,6 +378,15 @@ extern class Native {
 	@:native("linc::sdl3::getClipboardText")
 	static function getClipboardText():String;
 
+	@:native("linc::sdl3::setClipboardTexts")
+	static function setClipboardTexts(types:Array<String>, texts:Array<String>):Bool;
+
+	@:native("linc::sdl3::getClipboardData")
+	static function getClipboardData(type:String):Null<String>;
+
+	@:native("SDL_HasClipboardData")
+	static function hasClipboardData(type:ConstCharStar):Bool;
+
 	// Cursors
 
 	@:native("linc::sdl3::createSystemCursor")
