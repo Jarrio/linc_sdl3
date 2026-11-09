@@ -675,6 +675,11 @@ class SDL {
 		return Native.getClipboardText();
 	}
 
+	/** Opens `url` in the system's app for it (a browser, mail, a file's app); false if nothing could. **/
+	public static function openURL(url:String):Bool {
+		return Native.openURL(url);
+	}
+
 	// Cursors
 
 	/** `id` takes the `SYSTEM_CURSOR_` constants. Returns null on failure. **/

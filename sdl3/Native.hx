@@ -372,6 +372,9 @@ extern class Native {
 	@:native("SDL_HasClipboardText")
 	static function hasClipboardText():Bool;
 
+	@:native("SDL_OpenURL")
+	static function openURL(url:ConstCharStar):Bool;
+
 	@:native("linc::sdl3::getClipboardText")
 	static function getClipboardText():String;
 
